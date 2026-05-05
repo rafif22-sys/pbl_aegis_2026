@@ -33,21 +33,26 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE6F2F9),
-      body: _selectedIndex == 0
+      body: _selectedIndex == 0 
           ? SingleChildScrollView(
+              // Padding bawah dikurangi agar tidak terlalu jauh dari Bottom Nav Bar
+              padding: const EdgeInsets.only(bottom: 20), 
               child: Column(
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 24),
-
+                  
+                  const SizedBox(height: 32), // Jarak agak dijauhkan sedikit dari header
+                  
                   // MEMANGGIL TOMBOL SOS
                   _buildSOSButton(),
-                  const SizedBox(height: 24),
-
+                  
+                  const SizedBox(height: 28), // Jarak antara SOS dan Menu 2 Kotak
+                  
                   // MEMANGGIL MENU BUKU TAMU & LAPORAN
-                  _buildActionButtons(),
-
-                  const SizedBox(height: 40),
+                  _buildActionButtons(), 
+                  
+                  // SizedBox yang sebelumnya 40 kita hapus atau jadikan sangat kecil
+                  const SizedBox(height: 10), 
                 ],
               ),
             )
@@ -209,7 +214,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         borderRadius: BorderRadius.circular(35),
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 28),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF2E8DF7), Color(0xFF1A67DD)], // Gradient Biru
