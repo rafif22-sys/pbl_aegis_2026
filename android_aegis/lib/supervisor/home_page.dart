@@ -41,12 +41,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                 children: [
                   _buildHeader(),
                   
-                  const SizedBox(height: 32), // Jarak agak dijauhkan sedikit dari header
+                  const SizedBox(height: 50), // Jarak agak dijauhkan sedikit dari header
                   
                   // MEMANGGIL TOMBOL SOS
                   _buildSOSButton(),
                   
-                  const SizedBox(height: 28), // Jarak antara SOS dan Menu 2 Kotak
+                  const SizedBox(height: 45), // Jarak antara SOS dan Menu 2 Kotak
                   
                   // MEMANGGIL MENU BUKU TAMU & LAPORAN
                   _buildActionButtons(), 
