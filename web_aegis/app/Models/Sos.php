@@ -20,18 +20,27 @@ class Sos extends Model
         'waktu_kirim',
         'status',
         'bantuan_warga',
+        'dikonfirmasi_oleh',
+        'waktu_konfirmasi',
     ];
 
     protected $casts = [
-        'latitude' => 'float',
-        'longitude' => 'float',
-        'waktu_kirim' => 'datetime',
-        'bantuan_warga' => 'boolean',
+        'latitude'         => 'float',
+        'longitude'        => 'float',
+        'waktu_kirim'      => 'datetime',
+        'waktu_konfirmasi' => 'datetime', // ← tambah
+        'bantuan_warga'    => 'boolean',
     ];
 
-    
+    // Relasi pelapor (yang kirim SOS)
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    // Relasi petugas yang mengkonfirmasi ← tambah
+    public function konfirmator()
+    {
+        return $this->belongsTo(User::class, 'dikonfirmasi_oleh');
     }
 }

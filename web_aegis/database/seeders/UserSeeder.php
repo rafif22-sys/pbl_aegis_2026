@@ -3,117 +3,291 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // =========================
-        // ADMIN (2)
-        // =========================
-        $admin1 = User::create([
-            'nama' => 'Admin Utama',
-            'email' => 'admin1@mail.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'tanggal_lahir' => '1990-01-01',
-            'alamat' => 'Jakarta',
-            'no_hp' => '081111111111',
-            'foto_profil' => '/foto_profil/admin/1_admin_utama.jpg',
-        ]);
+        $users = [
+            // ── Admin ──────────────────────────────────────────────
+            [
+                'id'                  => 1,
+                'id_supervisor'       => null,
+                'nama'                => 'Admin Utama',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'admin1@mail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'admin',
+                'tanggal_lahir'       => '1990-01-01',
+                'alamat'              => 'Jakarta',
+                'no_hp'               => '081111111111',
+                'tanggal_bergabung'   => null,
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/admin/admin-utama.jpg',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 2,
+                'id_supervisor'       => null,
+                'nama'                => 'Admin Kedua',
+                'jenis_kelamin'       => 'perempuan',
+                'email'               => 'admin2@mail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'admin',
+                'tanggal_lahir'       => '1991-02-02',
+                'alamat'              => 'Bandung',
+                'no_hp'               => '081111111112',
+                'tanggal_bergabung'   => null,
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/admin/admin-kedua.jpg',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
 
-        $admin2 = User::create([
-            'nama' => 'Admin Kedua',
-            'email' => 'admin2@mail.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'tanggal_lahir' => '1991-02-02',
-            'alamat' => 'Bandung',
-            'no_hp' => '081111111112',
-            'foto_profil' => '/foto_profil/admin/2_admin_kedua.jpg',
-        ]);
+            // ── Supervisor ─────────────────────────────────────────
+            [
+                'id'                  => 3,
+                'id_supervisor'       => null,
+                'nama'                => 'Rafiif Ali Fahrezi',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'fahrezirafif05@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'supervisor',
+                'tanggal_lahir'       => '2006-02-22',
+                'alamat'              => 'Jalan Tegalsari X / 174, Semarang',
+                'no_hp'               => '085842487757',
+                'tanggal_bergabung'   => '2026-05-01',
+                'wilayah_pengawasan'  => 'Blok A',
+                'foto_profil'         => 'foto_profil/supervisor/rafiif-ali-fahrezi.jpg',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 4,
+                'id_supervisor'       => null,
+                'nama'                => 'Supervisor Satu',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'supervisor1@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'supervisor',
+                'tanggal_lahir'       => '1987-06-18',
+                'alamat'              => 'Jalan Bulusan Utara V',
+                'no_hp'               => '0877898990',
+                'tanggal_bergabung'   => '2026-05-01',
+                'wilayah_pengawasan'  => 'Blok C Selatan',
+                'foto_profil'         => 'foto_profil/supervisor/supervisor-satu.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
 
-        // =========================
-        // SUPERVISOR (2)
-        // =========================
-        $supervisor1 = User::create([
-            'nama' => 'Supervisor Satu',
-            'email' => 'spv1@mail.com',
-            'password' => Hash::make('password'),
-            'role' => 'supervisor',
-            'tanggal_lahir' => '1985-03-10',
-            'alamat' => 'Semarang',
-            'no_hp' => '081111111113',
-            'tanggal_bergabung' => now()->subYears(2),
-            'wilayah_pengawasan' => 'Wilayah A',
-            'foto_profil' => '/foto_profil/supervisor/1_supervisor_satu.jpg',
-        ]);
+            // ── Petugas (id_supervisor merujuk ke ID baru di atas) ─
+            [
+                'id'                  => 5,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Satu',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas1@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2000-02-02',
+                'alamat'              => 'Jalan Kawi V Wonotingal',
+                'no_hp'               => '08997889098',
+                'tanggal_bergabung'   => '2026-05-04',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-satu.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 6,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Dua',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas2@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2006-02-24',
+                'alamat'              => 'Jalan Baskoro V Semarang',
+                'no_hp'               => '08997886756',
+                'tanggal_bergabung'   => '2024-03-13',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-dua.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 7,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Tiga',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas3@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2009-07-09',
+                'alamat'              => 'Jalan Sambiroto Timur IX',
+                'no_hp'               => '08776778778',
+                'tanggal_bergabung'   => '2026-05-01',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-tiga.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 8,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Empat',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas4@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2006-04-25',
+                'alamat'              => 'Jalan Setia Budi V',
+                'no_hp'               => '08998778990',
+                'tanggal_bergabung'   => '2026-03-18',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-empat.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 9,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Lima',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas5@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2005-07-22',
+                'alamat'              => 'Jalan Merbabu V Magelang',
+                'no_hp'               => '08778998767',
+                'tanggal_bergabung'   => '2026-03-24',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-lima.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 10,
+                'id_supervisor'       => 3, // Rafiif Ali Fahrezi
+                'nama'                => 'Petugas Enam',
+                'jenis_kelamin'       => 'perempuan',
+                'email'               => 'petugas6@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2002-10-17',
+                'alamat'              => 'Jalan Tegalsari II Candi',
+                'no_hp'               => '08776889889',
+                'tanggal_bergabung'   => '2024-02-07',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-enam.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 11,
+                'id_supervisor'       => 4, // Supervisor Satu
+                'nama'                => 'Petugas Tujuh',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas7@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2005-09-01',
+                'alamat'              => 'Jalan Pudak Payung X',
+                'no_hp'               => '08997655567',
+                'tanggal_bergabung'   => '2024-06-05',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-tujuh.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 12,
+                'id_supervisor'       => 4, // Supervisor Satu
+                'nama'                => 'Petugas Delapan',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas8@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2004-10-27',
+                'alamat'              => 'Jalan Plamongan Indah',
+                'no_hp'               => '098123456789',
+                'tanggal_bergabung'   => '2026-03-31',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-delapan.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
+            [
+                'id'                  => 13,
+                'id_supervisor'       => 4, 
+                'nama'                => 'Petugas Sembilan',
+                'jenis_kelamin'       => 'laki-laki',
+                'email'               => 'petugas9@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'petugas',
+                'tanggal_lahir'       => '2003-07-25',
+                'alamat'              => 'Jalan Sisingamangaraja',
+                'no_hp'               => '08778967890',
+                'tanggal_bergabung'   => '2026-05-01',
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/petugas/petugas-sembilan.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
 
-        $supervisor2 = User::create([
-            'nama' => 'Supervisor Dua',
-            'email' => 'spv2@mail.com',
-            'password' => Hash::make('password'),
-            'role' => 'supervisor',
-            'tanggal_lahir' => '1986-04-12',
-            'alamat' => 'Solo',
-            'no_hp' => '081111111114',
-            'tanggal_bergabung' => now()->subYears(3),
-            'wilayah_pengawasan' => 'Wilayah B',
-            'foto_profil' => '/foto_profil/supervisor/2_supervisor_dua.jpg',
-        ]);
-
-        // =========================
-        // PETUGAS (6)
-        // =========================
-        $petugas = [
-            ['nama' => 'Petugas A1', 'email' => 'petugas1@mail.com', 'spv' => $supervisor1->id],
-            ['nama' => 'Petugas A2', 'email' => 'petugas2@mail.com', 'spv' => $supervisor1->id],
-            ['nama' => 'Petugas A3', 'email' => 'petugas3@mail.com', 'spv' => $supervisor1->id],
-            ['nama' => 'Petugas B1', 'email' => 'petugas4@mail.com', 'spv' => $supervisor2->id],
-            ['nama' => 'Petugas B2', 'email' => 'petugas5@mail.com', 'spv' => $supervisor2->id],
-            ['nama' => 'Petugas B3', 'email' => 'petugas6@mail.com', 'spv' => $supervisor2->id],
+            // ── Warga ───────────────────────────────────────────────
+            [
+                'id'                  => 14,
+                'id_supervisor'       => null,
+                'nama'                => 'Warga Satu',
+                'jenis_kelamin'       => 'perempuan',
+                'email'               => 'warga1@gmail.com',
+                'password'            => Hash::make('password'),
+                'role'                => 'warga',
+                'tanggal_lahir'       => '2007-03-22',
+                'alamat'              => 'Jalan Dinar Mas II',
+                'no_hp'               => '08767888990',
+                'tanggal_bergabung'   => null,
+                'wilayah_pengawasan'  => null,
+                'foto_profil'         => 'foto_profil/warga/warga-satu.png',
+                'email_verified_at'   => null,
+                'remember_token'      => null,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ],
         ];
 
-        foreach ($petugas as $i => $p) {
-            $id = $i + 1;
-
-            $slug = strtolower(str_replace(' ', '_', $p['nama']));
-
-            User::create([
-                'nama' => $p['nama'],
-                'email' => $p['email'],
-                'password' => Hash::make('password'),
-                'role' => 'petugas',
-                'id_supervisor' => $p['spv'],
-                'tanggal_lahir' => '1995-01-01',
-                'alamat' => 'Area Petugas',
-                'no_hp' => '08122222000' . $id,
-                'tanggal_bergabung' => now()->subYear(),
-                'wilayah_pengawasan' => null,
-                'foto_profil' => "/foto_profil/petugas/{$id}_{$slug}.jpg",
-            ]);
-        }
-
-        // =========================
-        // WARGA (3)
-        // =========================
-        for ($i = 1; $i <= 3; $i++) {
-
-            $nama = "Warga {$i}";
-            $slug = strtolower(str_replace(' ', '_', $nama));
-
-            User::create([
-                'nama' => $nama,
-                'email' => 'warga' . $i . '@mail.com',
-                'password' => Hash::make('password'),
-                'role' => 'warga',
-                'tanggal_lahir' => '2000-01-0' . $i,
-                'alamat' => 'Alamat Warga',
-                'no_hp' => '08133333000' . $i,
-                'foto_profil' => "/foto_profil/warga/{$i}_{$slug}.jpg",
-            ]);
-        }
+        // Gunakan insert (bukan upsert) agar ID dihormati persis
+        DB::table('users')->insert($users);
+        DB::statement("SELECT setval('users_id_seq', (SELECT MAX(id) FROM users)+1)");
     }
 }

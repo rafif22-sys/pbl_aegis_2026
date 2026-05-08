@@ -19,7 +19,7 @@ class JadwalAbsensi extends Model
         'id_user',
         'id_jadwal',
         'id_rute',
-        'tanggal',
+        // 'tanggal',
         'jam_masuk',
         'jam_pulang',
         'status',
@@ -30,7 +30,7 @@ class JadwalAbsensi extends Model
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        // 'tanggal' => 'date',
         'jam_masuk' => 'datetime:H:i:s',
         'jam_pulang' => 'datetime:H:i:s',
         'latitude' => 'float',

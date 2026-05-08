@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SosController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth API (Flutter) ──────────────────────────────────
@@ -20,14 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Petugas Routes ──────────────────────────────────
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
-        // Route::get('/jadwal', [PetugasJadwalController::class, 'index'])->name('jadwal');
-        // Route::post('/laporan', [PetugasLaporanController::class, 'store'])->name('laporan.store');
+        Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
     });
 
     // ── Supervisor Routes ───────────────────────────────
     Route::middleware('role:supervisor')->prefix('supervisor')->name('supervisor.')->group(function () {
-        // Route::get('/petugas', [SupervisorPetugasController::class, 'index']);
-        // Route::get('/laporan', [SupervisorLaporanController::class, 'index']);
+        Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
     });
 
     // ── Warga Routes ────────────────────────────────────
@@ -37,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Shared (semua role mobile bisa akses) ───────────
     Route::middleware('role:petugas,supervisor,warga')->group(function () {
-        // Route::get('/notifikasi', [NotifikasiController::class, 'index']);
+        Route::post('/sos', [SosController::class, 'store'])->name('sos.store');
+        Route::get('/sos/{id}', [SosController::class, 'show'])->name('sos.show');
+         Route::get('/sos', [SosController::class, 'index'])->name('sos.index');
     });
 });
