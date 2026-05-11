@@ -1,0 +1,208 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Jadwal;
+use App\Models\JadwalAbsensi;
+use App\Models\PosJaga;
+use App\Models\Shift;
+use App\Models\Rute;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Carbon\Carbon;
+
+class JadwalController extends Controller
+{
+    public function index(Request $request)
+    {
+        $weekOffset = (int) $request->get('week_offset', 0);
+        $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeeks($weekOffset);
+        $endOfWeek   = $startOfWeek->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $filterPos   = $request->get('pos_jaga_id');
+        $filterShift = $request->get('shift_id');
+
+        $jadwals = Jadwal::with([
+                'posJaga',
+                'shift',
+                'jadwalAbsensi.user',
+                'jadwalAbsensi.rute',
+            ])
+            ->whereBetween('tanggal', [$startOfWeek->toDateString(), $endOfWeek->toDateString()])
+            ->when($filterPos,   fn($q) => $q->where('id_pos_jaga', $filterPos))
+            ->when($filterShift, fn($q) => $q->where('id_shift', $filterShift))
+            ->orderBy('tanggal')
+            ->get()
+            ->map(fn($j) => [
+                'id'          => $j->id,
+                'tanggal'     => $j->tanggal,
+                'hari'        => Carbon::parse($j->tanggal)->dayOfWeekIso - 1,
+                'pos_jaga'    => $j->posJaga ? ['id' => $j->posJaga->id, 'nama' => $j->posJaga->nama] : null,
+                'shift'       => $j->shift ? [
+                    'id'         => $j->shift->id,
+                    'nama'       => $j->shift->nama_shift,
+                    'jam_masuk'  => $j->shift->jam_mulai   ? Carbon::parse($j->shift->jam_mulai)->format('H:i')   : null,
+                    'jam_pulang' => $j->shift->jam_selesai ? Carbon::parse($j->shift->jam_selesai)->format('H:i') : null,
+                ] : null,
+                'absensi'     => $j->jadwalAbsensi->map(fn($a) => [
+                    'id'     => $a->id,
+                    'status' => $a->status,
+                    'user'   => $a->user ? ['id' => $a->user->id, 'nama' => $a->user->nama] : null,
+                    'rute'   => $a->rute ? ['id' => $a->rute->id, 'nama' => $a->rute->nama_rute] : null,
+                ]),
+            ]);
+
+        $posJagas = PosJaga::orderBy('nama')->get(['id', 'nama']);
+        $shifts   = Shift::orderBy('jam_mulai')->get(['id', 'nama_shift', 'jam_mulai', 'jam_selesai']);
+        $rutes    = Rute::orderBy('nama_rute')->get(['id', 'nama_rute']);
+        $petugas  = User::where('role', 'petugas')->orderBy('nama')->get(['id', 'nama']);
+
+        $shiftsNormalized = $shifts->map(fn($s) => [
+            'id'         => $s->id,
+            'nama'       => $s->nama_shift,
+            'jam_masuk'  => $s->jam_mulai   ? Carbon::parse($s->jam_mulai)->format('H:i')   : null,
+            'jam_pulang' => $s->jam_selesai ? Carbon::parse($s->jam_selesai)->format('H:i') : null,
+        ]);
+        $rutesNormalized = $rutes->map(fn($r) => ['id' => $r->id, 'nama' => $r->nama_rute]);
+
+        $stats = [
+            'total_jadwal'  => $jadwals->count(),
+            'total_petugas' => $jadwals->flatMap(fn($j) => collect($j['absensi'])->pluck('user.id'))->unique()->filter()->count(),
+            'total_rute'    => $jadwals->flatMap(fn($j) => collect($j['absensi'])->pluck('rute.id'))->unique()->filter()->count(),
+            'shift_terisi'  => $jadwals->pluck('shift.id')->unique()->filter()->count(),
+        ];
+
+        return Inertia::render('Admin/JadwalAbsensi', [
+            'jadwals'     => $jadwals,
+            'posJagas'    => $posJagas,
+            'shifts'      => $shiftsNormalized,
+            'rutes'       => $rutesNormalized,
+            'petugas'     => $petugas,
+            'stats'       => $stats,
+            'weekOffset'  => $weekOffset,
+            'startOfWeek' => $startOfWeek->toDateString(),
+            'endOfWeek'   => $endOfWeek->toDateString(),
+            'filters'     => [
+                'pos_jaga_id' => $filterPos,
+                'shift_id'    => $filterShift,
+            ],
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'id_pos_jaga' => 'required|exists:pos_jaga,id',
+            'id_shift'    => 'required|exists:shift,id',   // ← tabel shift
+            'id_user'     => 'required|exists:users,id',
+            'id_rute'     => 'required|exists:rute,id',    // ← tabel rute
+            'tanggal'     => 'required|date',
+            'scope'       => 'required|in:week,template',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $tanggals = [$validated['tanggal']];
+
+            if ($validated['scope'] === 'template') {
+                $base     = Carbon::parse($validated['tanggal']);
+                $tanggals = [];
+                for ($i = 0; $i < 12; $i++) {
+                    $tanggals[] = $base->copy()->addWeeks($i)->toDateString();
+                }
+            }
+
+            foreach ($tanggals as $tgl) {
+                $jadwal = Jadwal::firstOrCreate(
+                    [
+                        'id_pos_jaga' => $validated['id_pos_jaga'],
+                        'id_shift'    => $validated['id_shift'],
+                        'tanggal'     => $tgl,
+                    ]
+                );
+
+                // ← 'tanggal' dihapus, diambil dari relasi ke tabel jadwal
+                JadwalAbsensi::firstOrCreate(
+                    [
+                        'id_jadwal' => $jadwal->id,
+                        'id_user'   => $validated['id_user'],
+                    ],
+                    [
+                        'id_rute' => $validated['id_rute'],
+                        'status'  => 'menunggu',
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Jadwal berhasil disimpan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menyimpan jadwal: ' . $e->getMessage());
+        }
+    }
+
+    public function update(Request $request, JadwalAbsensi $absensi)
+    {
+        $validated = $request->validate([
+            'id_user' => 'sometimes|exists:users,id',
+            'id_rute' => 'sometimes|exists:rute,id',  // ← tabel rute
+        ]);
+
+        $absensi->update($validated);
+
+        return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
+    }
+
+    public function destroyAbsensi(JadwalAbsensi $absensi)
+    {
+        $jadwalId = $absensi->id_jadwal;
+        $absensi->delete();
+
+        $jadwal = Jadwal::find($jadwalId);
+        if ($jadwal && $jadwal->jadwalAbsensi()->count() === 0) {
+            $jadwal->delete();
+        }
+
+        return redirect()->back()->with('success', 'Jadwal berhasil dihapus.');
+    }
+
+    public function destroyTemplate(Request $request)
+    {
+        $validated = $request->validate([
+            'id_pos_jaga' => 'required|exists:pos_jaga,id',
+            'id_shift'    => 'required|exists:shift,id',  // ← tabel shift
+            'id_user'     => 'required|exists:users,id',
+            'from_date'   => 'required|date',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $jadwals = Jadwal::where('id_pos_jaga', $validated['id_pos_jaga'])
+                ->where('id_shift', $validated['id_shift'])
+                ->where('tanggal', '>=', $validated['from_date'])
+                ->pluck('id');
+
+            JadwalAbsensi::whereIn('id_jadwal', $jadwals)
+                ->where('id_user', $validated['id_user'])
+                ->delete();
+
+            Jadwal::whereIn('id', $jadwals)
+                ->whereDoesntHave('jadwalAbsensi')
+                ->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Template jadwal berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menghapus template: ' . $e->getMessage());
+        }
+    }
+}

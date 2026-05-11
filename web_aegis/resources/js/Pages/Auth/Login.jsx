@@ -19,18 +19,13 @@ export default function Login() {
             <div className="min-h-screen flex">
 
                 {/* LEFT SIDE */}
-                <div className="w-[50%] bg-[#0F2A44] text-white flex flex-col justify-start items-center px-10 pt-20">
-
+                <div className="w-[50%] bg-[#0F2A44] text-white flex flex-col justify-center items-center px-10">
+                    
                     <img
-                        src="https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png"
+                        src="https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png"
                         alt="Aegis Logo"
-                        className="w-96 h-auto object-contain mb-2"
+                        className="w-64 h-auto object-contain mb-4"
                     />
-
-                    <p className="text-sm text-center opacity-80 mb-6 -mt-24">
-                        Advanced Emergency <br />
-                        & Guard Information System
-                    </p>
 
                     <button
                         className="px-6 py-3 rounded text-sm leading-snug text-center"
@@ -65,22 +60,38 @@ export default function Login() {
                         <form onSubmit={handleSubmit} className="space-y-4">
 
                             {/* EMAIL */}
-                            <div>
-                                <label className="text-xs text-[#0F2A44]">EMAIL</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-[#0F2A44] flex items-center gap-1">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F2A44" strokeWidth="2">
+                                        <path d="M4 4h16v16H4z" />
+                                        <path d="m22 6-10 7L2 6" />
+                                    </svg>
+                                    EMAIL
+                                </label>
+
                                 <input
                                     type="email"
-                                    className="w-full p-2 rounded bg-white border border-gray-300"
+                                    placeholder="Masukkan email Anda"
+                                    className="w-full p-2 rounded bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#005EA4]"
                                     value={data.email}
                                     onChange={(e) => setData("email", e.target.value)}
                                 />
                             </div>
 
                             {/* PASSWORD */}
-                            <div>
-                                <label className="text-xs text-[#0F2A44]">PASSWORD</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-[#0F2A44] flex items-center gap-1">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F2A44" strokeWidth="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                    PASSWORD
+                                </label>
+
                                 <input
                                     type="password"
-                                    className="w-full p-2 rounded bg-white border border-gray-300"
+                                    placeholder="Masukkan password Anda"
+                                    className="w-full p-2 rounded bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#005EA4]"
                                     value={data.password}
                                     onChange={(e) => setData("password", e.target.value)}
                                 />
