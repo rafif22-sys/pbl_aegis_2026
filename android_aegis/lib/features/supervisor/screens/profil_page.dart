@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'daftar_petugas_page.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
@@ -23,6 +25,10 @@ class ProfilPage extends StatelessWidget {
                     _buildStatsRow(),
                     const SizedBox(height: 30),
                     _buildMenuContainer(context),
+                    
+                    const SizedBox(height: 30), // Jarak sebelum tombol logout
+                    // --- PEMANGGILAN TOMBOL LOGOUT ---
+                    const TombolLogoutSupervisor(), 
                   ],
                 ),
               ),
@@ -49,7 +55,7 @@ class ProfilPage extends StatelessWidget {
             height: 24,
             width: 24,
             fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24), // Fallback kalau internet mati
+            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24),
           ),
           const SizedBox(width: 8),
           const Expanded(
@@ -174,7 +180,7 @@ class ProfilPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFE4F0FB), // Lingkaran biru muda
+                color: const Color(0xFFE4F0FB),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.blue.shade200),
               ),
@@ -193,6 +199,64 @@ class ProfilPage extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+    );
+  }
+}
+
+// ─── IMPLEMENTASI WIDGET TOMBOL LOGOUT ───────────────────────────────────────
+class TombolLogoutSupervisor extends StatelessWidget {
+  const TombolLogoutSupervisor({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () async {
+        // 1. Munculkan pop-up konfirmasi
+        final bool? konfirmasi = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Konfirmasi Keluar'),
+              content: const Text('Apakah Anda yakin ingin keluar dari akun Supervisor?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            );
+          },
+        );
+
+        // 2. Jika klik "Keluar", jalankan fungsi dari AuthProvider
+        if (konfirmasi == true && context.mounted) {
+          final authProvider = context.read<AuthProvider>();
+          
+          // Proses menghapus token di Supabase & memori HP
+          await authProvider.logout();
+
+          // 3. Lempar paksa kembali ke halaman Login dan hapus tumpukan histori halaman
+          if (context.mounted) {
+            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+          }
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red.shade50,
+        foregroundColor: Colors.red.shade700,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.red.shade200),
+        ),
+      ),
+      icon: const Icon(Icons.logout),
+      label: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }

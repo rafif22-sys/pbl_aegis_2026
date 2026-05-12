@@ -12,6 +12,7 @@ class _SOSFormPageState extends State<SOSFormPage> {
   String _selectedCategory = 'KEBAKARAN'; // Default terpilih
   bool _isLainnyaChecked = false;
   bool _butuhBantuanWarga = false; // false = TIDAK, true = YA
+  final TextEditingController _lainnyaController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,8 @@ class _SOSFormPageState extends State<SOSFormPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context), // Kembali ke halaman sebelumnya
+          onPressed: () =>
+              Navigator.pop(context), // Kembali ke halaman sebelumnya
         ),
       ),
       body: Center(
@@ -76,17 +78,37 @@ class _SOSFormPageState extends State<SOSFormPage> {
                 // Grid Pilihan Darurat
                 Row(
                   children: [
-                    Expanded(child: _buildCategoryOption('KEBAKARAN', Icons.local_fire_department_outlined)),
+                    Expanded(
+                      child: _buildCategoryOption(
+                        'KEBAKARAN',
+                        Icons.local_fire_department_outlined,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildCategoryOption('PENCURIAN', Icons.person_off_outlined)),
+                    Expanded(
+                      child: _buildCategoryOption(
+                        'PENCURIAN',
+                        Icons.person_off_outlined,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _buildCategoryOption('HEWAN LIAR', Icons.pets_outlined)),
+                    Expanded(
+                      child: _buildCategoryOption(
+                        'HEWAN LIAR',
+                        Icons.pets_outlined,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildCategoryOption('BENCANA ALAM', Icons.home_work_outlined)),
+                    Expanded(
+                      child: _buildCategoryOption(
+                        'BENCANA ALAM',
+                        Icons.home_work_outlined,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -99,27 +121,48 @@ class _SOSFormPageState extends State<SOSFormPage> {
                       onChanged: (value) {
                         setState(() {
                           _isLainnyaChecked = value ?? false;
-                          if (_isLainnyaChecked) _selectedCategory = 'LAINNYA';
+                          if (_isLainnyaChecked) {
+                            _selectedCategory = 'LAINNYA';
+                          } else {
+                            // Kosongkan isi textfield kalau centang dihilangkan
+                            _lainnyaController.clear();
+                          }
                         });
                       },
                     ),
-                    const Text('LAINNYA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const Text(
+                      'LAINNYA',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
-                
+
                 // TextField Keterangan (Hanya aktif jika "Lainnya" dicentang)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FA),
+                    // Warnanya berubah: terang kalau dicentang, abu-abu gelap kalau nggak
+                    color: _isLainnyaChecked
+                        ? const Color(0xFFF5F7FA)
+                        : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
+                    controller:
+                        _lainnyaController, // Pastikan ini ditambahkan ya
                     enabled: _isLainnyaChecked,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: 'Misal: Gangguan kebisingan...',
-                      hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+                      hintStyle: TextStyle(
+                        color: _isLainnyaChecked
+                            ? Colors.grey
+                            : Colors.grey.shade500,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
@@ -129,7 +172,11 @@ class _SOSFormPageState extends State<SOSFormPage> {
                 const Text(
                   'APAKAH BUTUH BANTUAN SEMUA WARGA?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.black54),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    color: Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -139,35 +186,74 @@ class _SOSFormPageState extends State<SOSFormPage> {
                   ),
                   child: Row(
                     children: [
+                      // Tombol YA
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _butuhBantuanWarga = false),
+                          onTap: () {
+                            setState(() {
+                              _butuhBantuanWarga = true;
+                            });
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !_butuhBantuanWarga ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: !_butuhBantuanWarga 
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
-                                : [],
+                              color: _butuhBantuanWarga
+                                  ? const Color(0xFF0D47A1)
+                                  : Colors.white,
+                              border: Border.all(
+                                color: const Color(0xFF0D47A1),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Center(child: Text('TIDAK', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87))),
+                            child: Center(
+                              child: Text(
+                                'YA',
+                                style: TextStyle(
+                                  fontWeight: _butuhBantuanWarga
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: _butuhBantuanWarga
+                                      ? Colors.white
+                                      : const Color(0xFF0D47A1),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      // Tombol TIDAK
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _butuhBantuanWarga = true),
+                          onTap: () {
+                            setState(() {
+                              _butuhBantuanWarga = false;
+                            });
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: _butuhBantuanWarga ? Colors.white : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: _butuhBantuanWarga 
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)]
-                                : [],
+                              color: !_butuhBantuanWarga
+                                  ? const Color(0xFF0D47A1)
+                                  : Colors.white,
+                              border: Border.all(
+                                color: const Color(0xFF0D47A1),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Center(child: Text('YA', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey))),
+                            child: Center(
+                              child: Text(
+                                'TIDAK',
+                                style: TextStyle(
+                                  fontWeight: !_butuhBantuanWarga
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: !_butuhBantuanWarga
+                                      ? Colors.white
+                                      : const Color(0xFF0D47A1),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -185,9 +271,17 @@ class _SOSFormPageState extends State<SOSFormPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFD30000), // Merah
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: const Text('BATAL', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: const Text(
+                          'BATAL',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -197,12 +291,20 @@ class _SOSFormPageState extends State<SOSFormPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF28A745), // Hijau
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('KIRIM', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text(
+                              'KIRIM',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                             SizedBox(width: 8),
                             Icon(Icons.send, color: Colors.white, size: 16),
                           ],
@@ -222,18 +324,21 @@ class _SOSFormPageState extends State<SOSFormPage> {
   // Widget Pembantu untuk Kotak Pilihan Kategori
   Widget _buildCategoryOption(String title, IconData icon) {
     bool isSelected = _selectedCategory == title && !_isLainnyaChecked;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
           _selectedCategory = title;
-          _isLainnyaChecked = false; // Matikan checkbox lainnya jika milih kategori standar
+          _isLainnyaChecked =
+              false; // Matikan checkbox lainnya jika milih kategori standar
         });
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0D47A1) : const Color(0xFFF5F7FA), // Biru gelap jika dipilih
+          color: isSelected
+              ? const Color(0xFF0D47A1)
+              : const Color(0xFFF5F7FA), // Biru gelap jika dipilih
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -263,14 +368,25 @@ class _SOSFormPageState extends State<SOSFormPage> {
         content: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('PESAN SOS BERHASIL DIKIRIMKAN', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'PESAN SOS BERHASIL DIKIRIMKAN',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             SizedBox(width: 10),
             Icon(Icons.check_circle, color: Colors.white),
           ],
         ),
-        backgroundColor: const Color(0xFF28A745), // Warna hijau persis seperti desainmu
-        behavior: SnackBarBehavior.floating, // Supaya melayang (tidak nempel dasar layar)
-        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        backgroundColor: const Color(
+          0xFF28A745,
+        ), // Warna hijau persis seperti desainmu
+        behavior: SnackBarBehavior
+            .floating, // Supaya melayang (tidak nempel dasar layar)
+        margin: EdgeInsets.only(
+          bottom:
+              MediaQuery.of(context).size.height -150, // Atur angka 150 jika kurang pas posisinya
+          left: 20,
+          right: 20,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3), // Muncul selama 3 detik
       ),
