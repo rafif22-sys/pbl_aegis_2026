@@ -21,6 +21,8 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('nama');
+            $table->enum('jenis_kelamin', ['laki-laki', 'perempuan'])->nullable();
+
             $table->string('email')->unique();
             $table->string('password');
 
@@ -34,6 +36,7 @@ return new class extends Migration
             $table->string('wilayah_pengawasan')->nullable();
 
             $table->string('foto_profil');
+
 
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

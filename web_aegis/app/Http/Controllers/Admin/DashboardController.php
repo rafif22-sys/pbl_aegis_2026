@@ -12,11 +12,28 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Auth;
+
 
 class DashboardController extends Controller
 {
     public function index(): Response
     {
+        $userId = Auth::id();
+        $cacheKey = 'informasi_last_read_' . $userId;
+        $lastRead = cache()->get($cacheKey);
+
+        if (!$lastRead) {
+            $unreadCount = 0;
+        } else {
+            $unreadCount = Informasi::where('id_user', '!=', $userId)
+                ->where('waktu_kirim', '>', $lastRead)
+                ->count();
+        }
+
+        // Selalu perbarui cache setiap buka halaman → badge hilang setelah refresh
+        cache()->forever($cacheKey, now());
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'petugas'    => User::where('role', 'petugas')->count(),
@@ -42,7 +59,8 @@ class DashboardController extends Controller
                 'deskripsi' => $rute->checkpoint->pluck('nama')->join(' > '),
             ]),
 
-            // Ambil 50 pesan terbaru beserta nama pengirim
+            'unread_count' => $unreadCount,
+
             'informasi' => Informasi::with('user')
                 ->latest('waktu_kirim')
                 ->limit(50)
@@ -50,12 +68,12 @@ class DashboardController extends Controller
                 ->reverse()
                 ->values()
                 ->map(fn ($info) => [
-                    'id'        => $info->id,
+                    'id'          => $info->id,
                     'id_pengirim' => $info->id_user,
-                    'pengirim'  => $info->user->nama ?? 'Unknown',
-                    'role'      => $info->user->role ?? '',
-                    'pesan'     => $info->pesan,
-                    'waktu' => $info->waktu_kirim->translatedFormat('d F Y | H:i'),
+                    'pengirim'    => $info->user->nama ?? 'Unknown',
+                    'role'        => $info->user->role ?? '',
+                    'pesan'       => $info->pesan,
+                    'waktu_iso'   => $info->waktu_kirim->toISOString(),
                 ]),
         ]);
     }
@@ -67,10 +85,12 @@ class DashboardController extends Controller
         ]);
 
         Informasi::create([
-            'id_user'    => auth()->id(),
-            'pesan'      => $request->pesan,
+            'id_user'     => Auth::id(),
+            'pesan'       => $request->pesan,
             'waktu_kirim' => now(),
         ]);
+
+        cache()->forever('informasi_last_read_' . Auth::id(), now());
 
         return back();
     }

@@ -48,7 +48,7 @@ class SosDetailMap extends StatelessWidget {
                   height: 80,
                   child: AnimatedBuilder(
                     animation: pulseAnim,
-                    builder: (_, _) => Transform.scale(
+                    builder: (_, __) => Transform.scale(
                       scale: pulseAnim.value,
                       child: Center(
                         child: Container(

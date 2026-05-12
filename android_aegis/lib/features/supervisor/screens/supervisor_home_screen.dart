@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
 
-
 class SupervisorHomeScreen extends StatelessWidget {
   const SupervisorHomeScreen({super.key});
 

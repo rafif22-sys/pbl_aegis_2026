@@ -41,6 +41,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $userId = Auth::id();
+    
+        // Simpan waktu logout sebagai lastRead SEBELUM session di-invalidate
+        $lastReadKey = 'informasi_last_read_' . $userId;
+        cache()->forever($lastReadKey, now());
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

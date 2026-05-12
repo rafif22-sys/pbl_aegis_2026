@@ -137,7 +137,7 @@ class SosCard extends StatelessWidget {
             ),
           );
         },
-        errorBuilder: (_, _, _) => inisial,
+        errorBuilder: (_, __, ___) => inisial,
       ),
     );
   }
