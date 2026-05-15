@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SosController;
+use App\Http\Controllers\Api\TamuController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth API (Flutter) ──────────────────────────────────
@@ -22,6 +23,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Petugas Routes ──────────────────────────────────
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
         Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
+    });
+
+    // ── Buku Tamu Routes ────────────────────────────────
+    Route::middleware('role:petugas')->group(function () {
+        Route::get('/tamu', [TamuController::class, 'index'])->name('tamu.index');
+        Route::post('/tamu', [TamuController::class, 'store'])->name('tamu.store');
+        Route::patch('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.update');
+        Route::put('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.put');
     });
 
     // ── Supervisor Routes ───────────────────────────────
