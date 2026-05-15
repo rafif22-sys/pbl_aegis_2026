@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'features/auth/providers/auth_provider.dart';
+import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
 
 import 'core/routes/app_routes.dart';
@@ -20,8 +21,7 @@ Future<void> main() async {
     url: 'https://dwyfjwwgrtdspgdaifyv.supabase.co',
 
     // GANTI DENGAN ANON KEY KAMU
-    anonKey:
-        'MASUKKAN_ANON_KEY_SUPABASE_KAMU',
+    anonKey: 'MASUKKAN_ANON_KEY_SUPABASE_KAMU',
   );
 
   runApp(const MyApp());
@@ -34,13 +34,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
 
-        ChangeNotifierProvider(
-          create: (_) => SosProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => SosProvider()),
+
+        ChangeNotifierProvider(create: (_) => TamuProvider()),
       ],
 
       child: MaterialApp(
@@ -72,10 +70,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuth() async {
-    await Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).checkAuthStatus();
+    await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
 
     if (mounted) {
       setState(() => _isChecking = false);
@@ -84,29 +79,22 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-
     // SPLASH SCREEN
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: Color(0xFF041221),
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
-          ),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
     // AUTH CHECK
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-
         if (!auth.isLoggedIn) {
           return const LoginScreen();
         }
 
         switch (auth.user!.role) {
-
           case 'petugas':
             return const PetugasHomeScreen();
 

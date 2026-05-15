@@ -1,21 +1,23 @@
 import 'dart:convert';
 
-import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../core/services/api_client.dart';
 import '../models/tamu_model.dart';
+import '../models/tamu_request_model.dart';
 
 class TamuService {
-  static Future<List<TamuModel>> fetchAll({required String token}) async {
+  static Future<List<TamuModel>> getListTamu({required String token}) async {
     final response = await http.get(
       Uri.parse('${ApiClient.baseUrl}/tamu'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: ApiClient.headers(token: token),
     );
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300 ||
+        body['success'] == false) {
       throw Exception(body['message'] ?? 'Gagal mengambil data tamu.');
     }
 
@@ -27,12 +29,9 @@ class TamuService {
     return data;
   }
 
-  static Future<Map<String, dynamic>> store({
+  static Future<TamuModel> store({
     required String token,
-    required String nama,
-    required String alamat,
-    required String keperluan,
-    required XFile fotoTamu,
+    required TamuRequestModel requestModel,
   }) async {
     final request = http.MultipartRequest(
       'POST',
@@ -44,16 +43,11 @@ class TamuService {
       'Authorization': 'Bearer $token',
     });
 
-    request.fields.addAll({
-      'nama': nama,
-      'alamat': alamat,
-      'keperluan': keperluan,
-      'status': 'masuk',
-    });
+    request.fields.addAll(requestModel.toFields());
 
-    final bytes = await fotoTamu.readAsBytes();
-    final filename = fotoTamu.name.isNotEmpty
-        ? fotoTamu.name
+    final bytes = await requestModel.fotoTamu.readAsBytes();
+    final filename = requestModel.fotoTamu.name.isNotEmpty
+        ? requestModel.fotoTamu.name
         : 'foto_tamu_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     request.files.add(
@@ -68,19 +62,14 @@ class TamuService {
       throw Exception(body['message'] ?? 'Gagal menyimpan data tamu.');
     }
 
-    return body;
+    return TamuModel.fromJson(body['data'] as Map<String, dynamic>);
   }
 
-  static Future<void> markKeluar({
+  static Future<TamuModel> update({
     required String token,
     required int tamuId,
-    required DateTime waktuKeluar,
+    required TamuUpdateRequestModel requestModel,
   }) async {
-    final waktuKeluarIso = waktuKeluar.toIso8601String();
-    final waktuKeluarJam =
-        '${waktuKeluar.hour.toString().padLeft(2, '0')}:'
-        '${waktuKeluar.minute.toString().padLeft(2, '0')}';
-
     final attempts = <Future<http.Response> Function()>[
       () => http.patch(
         Uri.parse('${ApiClient.baseUrl}/tamu/$tamuId'),
@@ -88,11 +77,7 @@ class TamuService {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: {
-          'status': 'keluar',
-          'waktu_keluar': waktuKeluarIso,
-          'jam_keluar': waktuKeluarJam,
-        },
+        body: requestModel.toFields(),
       ),
       () => http.post(
         Uri.parse('${ApiClient.baseUrl}/tamu/$tamuId'),
@@ -100,12 +85,7 @@ class TamuService {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: {
-          '_method': 'PATCH',
-          'status': 'keluar',
-          'waktu_keluar': waktuKeluarIso,
-          'jam_keluar': waktuKeluarJam,
-        },
+        body: {'_method': 'PATCH', ...requestModel.toFields()},
       ),
       () => http.put(
         Uri.parse('${ApiClient.baseUrl}/tamu/$tamuId'),
@@ -113,11 +93,7 @@ class TamuService {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: {
-          'status': 'keluar',
-          'waktu_keluar': waktuKeluarIso,
-          'jam_keluar': waktuKeluarJam,
-        },
+        body: requestModel.toFields(),
       ),
     ];
 
@@ -126,7 +102,8 @@ class TamuService {
     for (final request in attempts) {
       final response = await request();
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return;
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return TamuModel.fromJson(body['data'] as Map<String, dynamic>);
       }
 
       if (response.body.isNotEmpty) {

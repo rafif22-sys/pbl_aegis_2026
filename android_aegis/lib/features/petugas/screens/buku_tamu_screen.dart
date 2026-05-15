@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../models/tamu_model.dart';
-import '../services/tamu_service.dart';
+import '../providers/tamu_provider.dart';
 import 'widgets/buku_tamu/formulir_tamu_screen.dart';
 import 'widgets/buku_tamu/notification_screen.dart';
 import 'widgets/buku_tamu/top_bar_screen.dart';
@@ -48,20 +48,18 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
       _errorMessage = null;
     });
 
-    try {
-      final data = await TamuService.fetchAll(token: token);
-      if (!mounted) return;
-      setState(() {
-        _tamus = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
+    await context.read<TamuProvider>().fetchListTamu(token: token);
+
+    if (!mounted) return;
+    final tamuProvider = context.read<TamuProvider>();
+    setState(() {
+      _isLoading = false;
+      if (tamuProvider.state == TamuListState.error) {
+        _errorMessage = tamuProvider.errorMessage;
+      } else {
+        _tamus = tamuProvider.tamuList;
+      }
+    });
   }
 
   Future<void> _openForm() async {
@@ -486,86 +484,28 @@ class _DetailTamuDialog extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: AspectRatio(
-                        aspectRatio: 0.76,
-                        child: Container(
-                          color: const Color(0xFFF4F4F4),
-                          child: fotoUrl == null
-                              ? const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported_outlined,
-                                    size: 42,
-                                    color: Colors.grey,
-                                  ),
-                                )
-                              : Image.network(
-                                  fotoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 42,
-                                        color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              status,
-                              style: TextStyle(
-                                color: statusColor == const Color(0xFF2EB24F)
-                                    ? const Color(0xFF2EB24F)
-                                    : const Color(0xFF4766C4),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        _infoRow(Icons.person, tamu.nama),
-                        _separator(),
-                        _infoRow(Icons.description_outlined, tamu.keperluan),
-                        _separator(),
-                        _infoRow(Icons.home_outlined, tamu.alamat),
-                        _separator(),
-                        _infoRow(
-                          Icons.badge_outlined,
-                          'Petugas ${tamu.idUser}',
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 430;
+                  final photo = _photoPreview(fotoUrl);
+                  final info = _detailInfo(status, statusColor);
+
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [photo, const SizedBox(height: 16), info],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: photo),
+                      const SizedBox(width: 16),
+                      Expanded(flex: 5, child: info),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Row(
@@ -622,8 +562,78 @@ class _DetailTamuDialog extends StatelessWidget {
     );
   }
 
+  Widget _photoPreview(String? fotoUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: AspectRatio(
+        aspectRatio: 0.86,
+        child: Container(
+          color: const Color(0xFFF4F4F4),
+          child: fotoUrl == null
+              ? const Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    size: 42,
+                    color: Colors.grey,
+                  ),
+                )
+              : Image.network(
+                  fotoUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        size: 42,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailInfo(String status, Color statusColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                color: statusColor == const Color(0xFF2EB24F)
+                    ? const Color(0xFF2EB24F)
+                    : const Color(0xFF4766C4),
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        _infoRow(Icons.person, tamu.nama),
+        _separator(),
+        _infoRow(Icons.description_outlined, tamu.keperluan),
+        _separator(),
+        _infoRow(Icons.home_outlined, tamu.alamat),
+        _separator(),
+        _infoRow(Icons.badge_outlined, 'Petugas ${tamu.idUser}'),
+      ],
+    );
+  }
+
   Widget _infoRow(IconData icon, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 20, color: Colors.black),
         const SizedBox(width: 10),
@@ -631,7 +641,7 @@ class _DetailTamuDialog extends StatelessWidget {
           child: Text(
             value,
             style: const TextStyle(fontSize: 15),
-            overflow: TextOverflow.ellipsis,
+            softWrap: true,
           ),
         ),
       ],
@@ -744,11 +754,15 @@ class _KeluarTamuDialogState extends State<_KeluarTamuDialog> {
 
     setState(() => _isSaving = true);
     try {
-      await TamuService.markKeluar(
+      final result = await context.read<TamuProvider>().markKeluar(
         token: token,
         tamuId: widget.tamu.id,
         waktuKeluar: waktuKeluar,
       );
+
+      if (!result.success) {
+        throw Exception(result.message);
+      }
 
       if (!mounted) return;
       Navigator.pop(context, true);

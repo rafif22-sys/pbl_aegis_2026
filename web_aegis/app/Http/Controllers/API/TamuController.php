@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tamu;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class TamuController extends Controller
 {
@@ -49,17 +52,32 @@ class TamuController extends Controller
             ], 422);
         }
 
-        $path = $request->file('foto_tamu')->store('tamu', 'public');
+        try {
+            $fotoTamu = $request->file('foto_tamu');
+            $path = $this->uploadToSupabase(
+                $fotoTamu,
+                $this->buildFotoPath($request->nama, $fotoTamu->getClientOriginalExtension())
+            );
 
-        $tamu = Tamu::create([
-            'id_user' => $request->user()->id,
-            'nama' => $request->nama,
-            'alamat' => $request->alamat,
-            'keperluan' => $request->keperluan,
-            'foto_tamu' => asset(Storage::url($path)),
-            'waktu_masuk' => now(),
-            'status' => $request->input('status', 'masuk'),
-        ]);
+            $tamu = Tamu::create([
+                'id_user' => $request->user()->id,
+                'nama' => $request->nama,
+                'alamat' => $request->alamat,
+                'keperluan' => $request->keperluan,
+                'foto_tamu' => $path,
+                'waktu_masuk' => now(),
+                'status' => $request->input('status', 'masuk'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Gagal menyimpan data tamu', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
@@ -118,13 +136,15 @@ class TamuController extends Controller
 
     private function formatTamu(Tamu $tamu): array
     {
+        $fotoTamu = $this->publicSupabaseUrl($tamu->foto_tamu);
+
         return [
             'id' => $tamu->id,
             'id_user' => $tamu->id_user,
             'nama' => $tamu->nama,
             'alamat' => $tamu->alamat,
             'keperluan' => $tamu->keperluan,
-            'foto_tamu' => $tamu->foto_tamu,
+            'foto_tamu' => $fotoTamu,
             'waktu_masuk' => $tamu->waktu_masuk?->toIso8601String(),
             'waktu_keluar' => $tamu->waktu_keluar?->toIso8601String(),
             'status' => $tamu->status,
@@ -134,5 +154,60 @@ class TamuController extends Controller
                 'foto_profil' => $tamu->user->foto_profil,
             ] : null,
         ];
+    }
+
+    private function uploadToSupabase(UploadedFile $file, string $path): string
+    {
+        $supabaseUrl = config('services.supabase.url');
+        $supabaseKey = config('services.supabase.key');
+        $bucket = config('services.supabase.bucket', 'aegis');
+
+        if (! $supabaseUrl || ! $supabaseKey) {
+            throw new \Exception('Konfigurasi Supabase belum lengkap.');
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$supabaseKey}",
+            'x-upsert' => 'true',
+        ])->attach(
+            'file',
+            fopen($file->getRealPath(), 'r'),
+            $file->getClientOriginalName(),
+            ['Content-Type' => $file->getMimeType()]
+        )->post("{$supabaseUrl}/storage/v1/object/{$bucket}/{$path}");
+
+        if (! $response->successful()) {
+            Log::error('Supabase upload foto tamu gagal', [
+                'path' => $path,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            throw new \Exception('Gagal upload foto tamu.');
+        }
+
+        return $path;
+    }
+
+    private function buildFotoPath(string $nama, string $extension): string
+    {
+        $safeExtension = $extension ?: 'jpg';
+        return 'foto_tamu/' . Str::slug($nama) . '_' . Str::random(10) . ".{$safeExtension}";
+    }
+
+    private function publicSupabaseUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');
+        $bucket = config('services.supabase.bucket', 'aegis');
+
+        return "{$supabaseUrl}/storage/v1/object/public/{$bucket}/" . ltrim($path, '/');
     }
 }

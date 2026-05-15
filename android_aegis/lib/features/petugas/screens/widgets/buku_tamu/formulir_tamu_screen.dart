@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../auth/providers/auth_provider.dart';
-import '../../../services/tamu_service.dart';
+import '../../../providers/tamu_provider.dart';
 import 'upload_foto_screen.dart';
 
 class FormulirTamuPage extends StatefulWidget {
@@ -49,13 +49,17 @@ class _FormulirTamuPageState extends State<FormulirTamuPage> {
 
     setState(() => _isSaving = true);
     try {
-      await TamuService.store(
+      final result = await context.read<TamuProvider>().tambahTamu(
         token: token,
         nama: nama,
         alamat: alamat,
         keperluan: keperluan,
         fotoTamu: _fotoTamu!,
       );
+
+      if (!result.success) {
+        throw Exception(result.message);
+      }
 
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop(true);
