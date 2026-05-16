@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -348,7 +349,12 @@ class _LoginScreenState extends State<LoginScreen>
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             TextButton(
-                                              onPressed: () {},
+                                              onPressed: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => const ForgotPasswordScreen(),
+                                                ),
+                                              ),
                                               style: TextButton.styleFrom(
                                                 padding: EdgeInsets.zero,
                                                 minimumSize: Size.zero,
@@ -468,7 +474,7 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Stack(
                     children: [
                       Image.network(
-                        'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png',
+                        'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
                         height: 190,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {

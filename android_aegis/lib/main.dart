@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/sos/providers/sos_provider.dart';        // ← tambah import ini
+import 'features/sos/providers/sos_provider.dart';
 import 'core/routes/app_routes.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
 import 'features/supervisor/screens/supervisor_home_screen.dart';
 import 'features/warga/screens/warga_home_screen.dart';
 
-void main() {
+void main() async {
+  // Diperlukan sebelum memanggil SharedPreferences
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -20,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => SosProvider()),  // ← tambah ini
+        ChangeNotifierProvider(create: (_) => SosProvider()),
       ],
       child: MaterialApp(
         title: 'AEGIS',
@@ -31,8 +33,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// ... sisa kode tidak berubah
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -51,13 +51,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuth() async {
+    // checkAuthStatus sekarang hanya baca cache lokal (cepat),
+    // server sync jalan di background — tidak memperlambat splash
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
     if (mounted) setState(() => _isChecking = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Selama cek token: tampilkan splash screen
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: Color(0xFF041221),
@@ -67,13 +68,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Setelah cek selesai: langsung return halaman yang tepat
-    // tanpa melewati LoginScreen sama sekali
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        if (!auth.isLoggedIn) {
-          return const LoginScreen();
-        }
+        if (!auth.isLoggedIn) return const LoginScreen();
 
         switch (auth.user!.role) {
           case 'petugas':

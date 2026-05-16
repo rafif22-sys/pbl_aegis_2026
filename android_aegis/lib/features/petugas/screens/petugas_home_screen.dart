@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'sos_form_screen.dart';
 import 'riwayat_sos_screen.dart';
+import 'jadwal_screen.dart';
 
 
 class PetugasHomeScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
 
   final List<Widget> _pages = [
     const SizedBox(),           // Index 0: Beranda (dihandle di body)
-    const SizedBox(),           // Index 1: Jadwal
+    const JadwalScreen(),       // Index 1: Jadwal
     const RiwayatSosScreen(),     // Index 2: Riwayat ← ganti ini
     const SizedBox(),           // Index 3: Informasi
     const SizedBox(),           // Index 4: Profil
@@ -110,7 +111,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     final String namaPetugas = user?.nama ?? 'Petugas';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE6F2F9),
+      backgroundColor: const Color(0xFFDCEFFE),  // ← sesuai
       body: _selectedIndex == 0
           ? Column(
               children: [
@@ -173,7 +174,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       child: Column(
         children: [
           Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png',
+            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
             height: 160,
             fit: BoxFit.contain,
             loadingBuilder: (context, child, progress) {
@@ -189,7 +190,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               return const Icon(Icons.broken_image, color: Colors.white54, size: 70);
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           const Text(
             'Selamat Datang,',
             style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),
@@ -464,3 +465,4 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 }
+

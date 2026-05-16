@@ -62,8 +62,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
      // ── Jadwal Absensi ──────────────────────────────────
     Route::get('/jadwal',                        [JadwalController::class, 'index'])          ->name('jadwal.index');
     Route::post('/jadwal',                       [JadwalController::class, 'store'])          ->name('jadwal.store');
+    Route::post('/jadwal/auto-generate',         [JadwalController::class, 'autoGenerate'])   ->name('jadwal.auto-generate'); // ← pindah ke atas
     Route::put('/jadwal/absensi/{absensi}',      [JadwalController::class, 'update'])         ->name('jadwal.absensi.update');
     Route::delete('/jadwal/absensi/{absensi}',   [JadwalController::class, 'destroyAbsensi']) ->name('jadwal.absensi.destroy');
     Route::delete('/jadwal/template',            [JadwalController::class, 'destroyTemplate'])->name('jadwal.template.destroy');
- 
 });
