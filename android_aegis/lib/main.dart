@@ -10,7 +10,7 @@ import 'core/routes/app_routes.dart';
 
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
-import 'features/supervisor/screens/supervisor_home_screen.dart';
+import 'features/supervisor/screens/home_page.dart';
 import 'features/warga/screens/warga_home_screen.dart';
 
 void main() async {
@@ -94,8 +94,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             return const PetugasHomeScreen();
 
           case 'supervisor':
-            return const SupervisorHomeScreen();
-
+            return const SupervisorHomePage();
           case 'warga':
             return const WargaHomeScreen();
 

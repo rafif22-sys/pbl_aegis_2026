@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../../sos/models/sos_model.dart';
 
 
 class SosDetailMap extends StatelessWidget {
@@ -48,7 +47,7 @@ class SosDetailMap extends StatelessWidget {
                   height: 80,
                   child: AnimatedBuilder(
                     animation: pulseAnim,
-                    builder: (_, __) => Transform.scale(
+                    builder: (_, _) => Transform.scale(
                       scale: pulseAnim.value,
                       child: Center(
                         child: Container(
