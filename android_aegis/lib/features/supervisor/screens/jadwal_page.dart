@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'detail_absensi_page.dart';
+import 'widgets/aegis_top_header.dart';
 
 // --- DATA DUMMY PETUGAS ---
 class JadwalData {
@@ -65,7 +66,7 @@ class _JadwalPageState extends State<JadwalPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopHeader(),
+            const AegisTopHeader(),
 
             // Bungkus dengan Expanded & SingleChildScrollView agar seluruh halaman bisa di-scroll
             Expanded(
@@ -114,37 +115,6 @@ class _JadwalPageState extends State<JadwalPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // --- WIDGET HEADER AEGIS ---
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          // Logo Kecil dari Supabase
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24), // Fallback kalau internet mati
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -758,6 +728,7 @@ class _JadwalPageState extends State<JadwalPage> {
       ),
     );
   }
+
   void _tampilkanKalenderBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -769,19 +740,35 @@ class _JadwalPageState extends State<JadwalPage> {
           padding: const EdgeInsets.all(24),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
           ),
           child: Column(
             children: [
               // Garis abu-abu di atas
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               const SizedBox(height: 20),
               // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  InkWell(onTap: () => Navigator.pop(context), child: const Icon(Icons.close)),
-                  const Text('Pilih Tanggal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.close),
+                  ),
+                  const Text(
+                    'Pilih Tanggal',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(width: 24), // Spacer
                 ],
               ),
@@ -805,9 +792,14 @@ class _JadwalPageState extends State<JadwalPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F172A),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Tampilkan Laporan', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  child: const Text(
+                    'Tampilkan Laporan',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ),
             ],

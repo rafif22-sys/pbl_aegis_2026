@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'daftar_petugas_page.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'widgets/aegis_top_header.dart';
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
@@ -13,7 +14,7 @@ class ProfilPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopHeader(),
+            const AegisTopHeader(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 100), // Ruang untuk BottomNav
@@ -35,36 +36,6 @@ class ProfilPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          // Logo Kecil dari Supabase
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24),
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
       ),
     );
   }

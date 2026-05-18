@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/aegis_top_header.dart';
 
 // --- MODEL DATA PESAN ---
 class PesanData {
@@ -68,7 +69,7 @@ class _InformasiPageState extends State<InformasiPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTopHeader(),
+            const AegisTopHeader(),
             const SizedBox(height: 20),
             _buildFilterTabs(),
             const SizedBox(height: 16),
@@ -94,36 +95,6 @@ class _InformasiPageState extends State<InformasiPage> {
           icon: const Icon(Icons.send_outlined, color: Colors.white, size: 20),
           label: const Text('Kirim Pesan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          // Logo Kecil dari Supabase
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24), // Fallback kalau internet mati
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
       ),
     );
   }

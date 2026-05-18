@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'detail_patroli_page.dart';
+import 'widgets/aegis_top_header.dart';
 
 class LaporanHarianPage extends StatefulWidget {
   final String tanggal;
@@ -21,7 +22,7 @@ class _LaporanHarianPageState extends State<LaporanHarianPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTopHeader(),
+            const AegisTopHeader(),
             _buildTitleBar(context),
 
             Expanded(
@@ -63,37 +64,6 @@ class _LaporanHarianPageState extends State<LaporanHarianPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // --- WIDGET HEADER AEGIS ---
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          // Logo Kecil dari Supabase
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24), // Fallback kalau internet mati
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
       ),
     );
   }

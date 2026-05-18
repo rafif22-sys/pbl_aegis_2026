@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'widgets/aegis_top_header.dart';
 
-// --- MODEL DATA BUKU TAMU ---
 class TamuData {
   final String nama;
   final String jamMasuk;
   final String jamKeluar;
-  final String status; // 'Masuk' atau 'Keluar'
+  final String status;
   final String noUrut;
 
   TamuData({
@@ -25,30 +25,60 @@ class BukuTamuPage extends StatefulWidget {
 }
 
 class _BukuTamuPageState extends State<BukuTamuPage> {
-  // Data Dummy sesuai gambar
   final List<TamuData> listTamu = [
-    TamuData(nama: 'Budi Prakoso', jamMasuk: '10:20', jamKeluar: '10:20', status: 'Keluar', noUrut: '111'),
-    TamuData(nama: 'Andi Surandi', jamMasuk: '10:20', jamKeluar: '-', status: 'Masuk', noUrut: '112'),
-    TamuData(nama: 'Budiono Simanjuntak', jamMasuk: '10:20', jamKeluar: '10:20', status: 'Keluar', noUrut: '111'),
-    TamuData(nama: 'Bambang Pamungkas', jamMasuk: '10:20', jamKeluar: '-', status: 'Masuk', noUrut: '112'),
-    TamuData(nama: 'Putra Surya', jamMasuk: '10:20', jamKeluar: '10:20', status: 'Keluar', noUrut: '111'),
+    TamuData(
+      nama: 'Budi Prakoso',
+      jamMasuk: '10:20',
+      jamKeluar: '10:20',
+      status: 'Keluar',
+      noUrut: '111',
+    ),
+    TamuData(
+      nama: 'Andi Surandi',
+      jamMasuk: '10:20',
+      jamKeluar: '-',
+      status: 'Masuk',
+      noUrut: '112',
+    ),
+    TamuData(
+      nama: 'Budiono Simanjuntak',
+      jamMasuk: '10:20',
+      jamKeluar: '10:20',
+      status: 'Keluar',
+      noUrut: '111',
+    ),
+    TamuData(
+      nama: 'Bambang Pamungkas',
+      jamMasuk: '10:20',
+      jamKeluar: '-',
+      status: 'Masuk',
+      noUrut: '112',
+    ),
+    TamuData(
+      nama: 'Putra Surya',
+      jamMasuk: '10:20',
+      jamKeluar: '10:20',
+      status: 'Keluar',
+      noUrut: '111',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE4F0FB), // Biru muda Aegis
+      backgroundColor: const Color(0xFFE4F0FB),
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopHeader(),
+            // ✅ Menggantikan fungsi manual lama dengan Reusable Widget resmi tim
+            const AegisTopHeader(),
+
             _buildTitleBar(context),
-            _buildDateFilter(), // <--- Ini komponen Pilih Tanggal yang bisa kamu pakai ulang
+            _buildDateFilter(),
             const SizedBox(height: 16),
             _buildSearchBar(),
             const SizedBox(height: 20),
-            
-            // Container Putih Pembungkus List
+
             Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -71,36 +101,6 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     );
   }
 
-  // Header Global dengan Logo Supabase
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24),
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTitleBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -113,39 +113,57 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
           const SizedBox(width: 16),
           const Text(
             'Buku Tamu',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // --- KOMPONEN PILIH TANGGAL (Bisa di-copy ke halaman lain) ---
   Widget _buildDateFilter() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          // Ikon Kalender Biru
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFBBE1FA), // Biru pastel
+              color: const Color(0xFFBBE1FA),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.calendar_today, color: Color(0xFF0D47A1), size: 20),
+            child: const Icon(
+              Icons.calendar_today,
+              color: Color(0xFF0D47A1),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
-          // Teks Hari & Tanggal
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('HARI INI', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-              Text('Senin, 24 Mei 2024', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text(
+                'HARI INI',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              Text(
+                'Senin, 24 Mei 2024',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          // Tombol Pilih Tanggal (Dropdown)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
@@ -157,9 +175,20 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
               children: [
                 Icon(Icons.calendar_today, size: 14, color: Colors.black54),
                 SizedBox(width: 6),
-                Text('Pilih Tanggal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(
+                  'Pilih Tanggal',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
                 SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.black54),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 16,
+                  color: Colors.black54,
+                ),
               ],
             ),
           ),
@@ -168,7 +197,6 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     );
   }
 
-  // --- KOMPONEN SEARCH BAR & FILTER ---
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -183,9 +211,15 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
               child: TextField(
                 decoration: InputDecoration(
                   hintText: 'Masukkan nama tamu',
-                  hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
+                  hintStyle: const TextStyle(
+                    color: Colors.black38,
+                    fontSize: 14,
+                  ),
                   prefixIcon: const Icon(Icons.search, color: Colors.black54),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
@@ -198,14 +232,13 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.tune, color: Color(0xFF0D47A1)), // Ikon Filter (Slider)
+            child: const Icon(Icons.tune, color: Color(0xFF0D47A1)),
           ),
         ],
       ),
     );
   }
 
-  // --- KOMPONEN KARTU TAMU ---
   Widget _buildTamuCard(TamuData tamu) {
     bool isKeluar = tamu.status == 'Keluar';
 
@@ -215,8 +248,14 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200), // Border tipis
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -224,22 +263,37 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tamu.nama, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+              Text(
+                tamu.nama,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Masuk - ${tamu.jamMasuk} | Keluar - ${tamu.jamKeluar}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Badge Status (Masuk/Keluar)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: isKeluar ? const Color(0xFFC8E6C9) : const Color(0xFFC5CAE9), // Hijau pastel / Biru pastel
+                  color: isKeluar
+                      ? const Color(0xFFC8E6C9)
+                      : const Color(0xFFC5CAE9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -247,74 +301,25 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isKeluar ? const Color(0xFF2E7D32) : const Color(0xFF283593), // Hijau gelap / Biru gelap
+                    color: isKeluar
+                        ? const Color(0xFF2E7D32)
+                        : const Color(0xFF283593),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
-              Text('No.${tamu.noUrut}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black)),
+              Text(
+                'No.${tamu.noUrut}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
             ],
           ),
         ],
       ),
-    );
-  }
-  void _tampilkanKalenderBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.75, // Tinggi 75% layar
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Garis abu-abu di atas
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
-              const SizedBox(height: 20),
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(onTap: () => Navigator.pop(context), child: const Icon(Icons.close)),
-                  const Text('Pilih Tanggal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 24), // Spacer
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Kalender Bawaan Flutter
-              Expanded(
-                child: CalendarDatePicker(
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2030),
-                  onDateChanged: (DateTime newDate) {
-                    // Logika saat tanggal dipilih
-                  },
-                ),
-              ),
-              // Tombol Tampilkan Laporan
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Tampilkan Laporan', style: TextStyle(color: Colors.white, fontSize: 16)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

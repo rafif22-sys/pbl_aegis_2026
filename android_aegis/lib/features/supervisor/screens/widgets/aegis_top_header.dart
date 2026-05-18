@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class SosTopHeader extends StatelessWidget {
-  const SosTopHeader({super.key});
+class AegisTopHeader extends StatelessWidget {
+  const AegisTopHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -9,24 +9,29 @@ class SosTopHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
       decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+        color: Color(0xFF0F172A), // Warna latar gelap header
         borderRadius: BorderRadius.only(
-          bottomLeft:  Radius.circular(8),
+          bottomLeft: Radius.circular(8),
           bottomRight: Radius.circular(8),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Logo kecil dari Supabase
           Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 40,
-            width: 40,
+            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/new_logo.png',
+            height: 30,
+            width: 30,
             fit: BoxFit.contain,
-            errorBuilder: (_, _, _) =>
-                const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 40),
+            errorBuilder: (_, __, ___) => const Icon(
+              Icons.shield, 
+              color: Colors.lightBlueAccent, 
+              size: 30,
+            ),
           ),
           const SizedBox(width: 10),
+          // Judul Aplikasi
           const Flexible(
             child: Text(
               'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',

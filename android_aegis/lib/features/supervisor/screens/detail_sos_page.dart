@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/aegis_top_header.dart';
 
 class DetailSosPage extends StatefulWidget {
   final String nama;
@@ -6,8 +7,8 @@ class DetailSosPage extends StatefulWidget {
   final String initialStatus;
 
   const DetailSosPage({
-    super.key, 
-    required this.nama, 
+    super.key,
+    required this.nama,
     required this.waktu,
     required this.initialStatus,
   });
@@ -22,7 +23,8 @@ class _DetailSosPageState extends State<DetailSosPage> {
   @override
   void initState() {
     super.initState();
-    status = widget.initialStatus; // Set status awal (MENUNGGU BANTUAN / SELESAI)
+    status =
+        widget.initialStatus; // Set status awal (MENUNGGU BANTUAN / SELESAI)
   }
 
   @override
@@ -32,7 +34,7 @@ class _DetailSosPageState extends State<DetailSosPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopHeader(),
+            const AegisTopHeader(),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -51,36 +53,6 @@ class _DetailSosPageState extends State<DetailSosPage> {
     );
   }
 
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-      ),
-      child: Row(
-        children: [
-          // Logo Kecil dari Supabase
-          Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis-nobg.png',
-            height: 24,
-            width: 24,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 24), // Fallback kalau internet mati
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTitleBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -93,7 +65,11 @@ class _DetailSosPageState extends State<DetailSosPage> {
           const SizedBox(width: 16),
           const Text(
             'PESAN SOS',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
         ],
       ),
@@ -106,7 +82,13 @@ class _DetailSosPageState extends State<DetailSosPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -115,7 +97,10 @@ class _DetailSosPageState extends State<DetailSosPage> {
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               color: Color(0xFFD30000), // Merah SOS
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
             ),
             child: Row(
               children: [
@@ -125,30 +110,54 @@ class _DetailSosPageState extends State<DetailSosPage> {
                     border: Border.all(color: Colors.white, width: 2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('PESAN SOS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                      Text('ID: SOS-992384-TX', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                      Text(
+                        'PESAN SOS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        'ID: SOS-992384-TX',
+                        style: TextStyle(color: Colors.white70, fontSize: 10),
+                      ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.white54),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text('CRITICAL', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'CRITICAL',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          
+
           // Gambar Peta Placeholder
           Container(
             height: 180,
@@ -156,13 +165,22 @@ class _DetailSosPageState extends State<DetailSosPage> {
             decoration: const BoxDecoration(
               color: Color(0xFFE2E8F0),
               image: DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'),
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+                ),
                 fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.white54, BlendMode.lighten),
+                colorFilter: ColorFilter.mode(
+                  Colors.white54,
+                  BlendMode.lighten,
+                ),
               ),
             ),
             child: Center(
-              child: Icon(Icons.warning, color: Colors.deepOrange.shade400, size: 60),
+              child: Icon(
+                Icons.warning,
+                color: Colors.deepOrange.shade400,
+                size: 60,
+              ),
             ),
           ),
 
@@ -178,17 +196,34 @@ class _DetailSosPageState extends State<DetailSosPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('PETUGAS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const Text(
+                            'PETUGAS',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
                               CircleAvatar(
                                 radius: 12,
                                 backgroundColor: const Color(0xFFE4F0FB),
-                                child: const Icon(Icons.person, size: 14, color: Color(0xFF0D47A1)),
+                                child: const Icon(
+                                  Icons.person,
+                                  size: 14,
+                                  color: Color(0xFF0D47A1),
+                                ),
                               ),
                               const SizedBox(width: 8),
-                              Text(widget.nama, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(
+                                widget.nama,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -198,13 +233,30 @@ class _DetailSosPageState extends State<DetailSosPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('WAKTU', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const Text(
+                            'WAKTU',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                              const Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                               const SizedBox(width: 6),
-                              Text(widget.waktu, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text(
+                                widget.waktu,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -224,18 +276,53 @@ class _DetailSosPageState extends State<DetailSosPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('DESKRIPSI KEJADIAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                      const Text(
+                        'DESKRIPSI KEJADIAN',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       RichText(
                         text: const TextSpan(
-                          style: TextStyle(color: Colors.black87, fontSize: 13, height: 1.5),
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 13,
+                            height: 1.5,
+                          ),
                           children: [
                             TextSpan(text: '"Terdapat '),
-                            TextSpan(text: 'kebakaran', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
-                            TextSpan(text: ' pada lokasi tersebut, pengirim memerlukan bantuan '),
-                            TextSpan(text: 'satpam', style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                            TextSpan(
+                              text: 'kebakaran',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            TextSpan(
+                              text:
+                                  ' pada lokasi tersebut, pengirim memerlukan bantuan ',
+                            ),
+                            TextSpan(
+                              text: 'satpam',
+                              style: TextStyle(
+                                color: Color(0xFF0D47A1),
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                             TextSpan(text: ' dan '),
-                            TextSpan(text: 'warga', style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+                            TextSpan(
+                              text: 'warga',
+                              style: TextStyle(
+                                color: Color(0xFF0D47A1),
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                             TextSpan(text: ' segera."'),
                           ],
                         ),
@@ -248,38 +335,54 @@ class _DetailSosPageState extends State<DetailSosPage> {
                 // Tombol Dinamis (Berubah sesuai status)
                 SizedBox(
                   width: double.infinity,
-                  child: status == 'MENUNGGU BANTUAN' 
-                    ? ElevatedButton.icon(
-                        onPressed: () {
-                          // Ubah status menjadi selesai saat diklik
-                          setState(() {
-                            status = 'SELESAI';
-                          });
-                        },
-                        icon: const Text('KONFIRMASI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        label: const Icon(Icons.check_circle, size: 20),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0D47A1),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: status == 'MENUNGGU BANTUAN'
+                      ? ElevatedButton.icon(
+                          onPressed: () {
+                            // Ubah status menjadi selesai saat diklik
+                            setState(() {
+                              status = 'SELESAI';
+                            });
+                          },
+                          icon: const Text(
+                            'KONFIRMASI',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          label: const Icon(Icons.check_circle, size: 20),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D47A1),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        )
+                      : ElevatedButton(
+                          onPressed: null, // Tombol mati kalau sudah selesai
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(
+                              0xFF5C8DF6,
+                            ), // Biru lebih terang
+                            disabledBackgroundColor: const Color(0xFF5C8DF6),
+                            disabledForegroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'SELESAI DITANGANI OLEH\nPETUGAS ANDI SIRANDI',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              height: 1.2,
+                            ),
+                          ),
                         ),
-                      )
-                    : ElevatedButton(
-                        onPressed: null, // Tombol mati kalau sudah selesai
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5C8DF6), // Biru lebih terang
-                          disabledBackgroundColor: const Color(0xFF5C8DF6),
-                          disabledForegroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: const Text(
-                          'SELESAI DITANGANI OLEH\nPETUGAS ANDI SIRANDI',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, height: 1.2),
-                        ),
-                      ),
                 ),
               ],
             ),
