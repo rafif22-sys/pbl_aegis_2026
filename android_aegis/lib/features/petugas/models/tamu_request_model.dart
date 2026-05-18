@@ -6,6 +6,7 @@ class TamuRequestModel {
   final String keperluan;
   final XFile fotoTamu;
   final String status;
+  final String? estimasiKeluar; // ← tambahkan
 
   const TamuRequestModel({
     required this.nama,
@@ -13,15 +14,23 @@ class TamuRequestModel {
     required this.keperluan,
     required this.fotoTamu,
     this.status = 'masuk',
+    this.estimasiKeluar, // ← tambahkan
   });
 
   Map<String, String> toFields() {
-    return {
+    final fields = {
       'nama': nama,
       'alamat': alamat,
       'keperluan': keperluan,
       'status': status,
     };
+
+    // Kirim estimasi keluar jika ada (format HH:mm)
+    if (estimasiKeluar != null) {
+      fields['estimasi_keluar'] = estimasiKeluar!;
+    }
+
+    return fields;
   }
 }
 

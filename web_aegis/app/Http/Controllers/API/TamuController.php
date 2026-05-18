@@ -37,18 +37,19 @@ class TamuController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama' => 'required|string|max:255',
-            'alamat' => 'required|string|max:1000',
-            'keperluan' => 'required|string|max:255',
-            'foto_tamu' => 'required|image|max:5120',
-            'status' => 'nullable|in:masuk,keluar',
+            'nama'            => 'required|string|max:255',
+            'alamat'          => 'required|string|max:1000',
+            'keperluan'       => 'required|string|max:255',
+            'foto_tamu'       => 'required|image|max:5120',
+            'status'          => 'nullable|in:masuk,keluar',
+            'estimasi_keluar' => 'nullable|date_format:H:i', // ← tambahan
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -59,15 +60,24 @@ class TamuController extends Controller
                 $this->buildFotoPath($request->nama, $fotoTamu->getClientOriginalExtension())
             );
 
+            // Parse estimasi keluar → simpan ke waktu_keluar
+            $waktuKeluar = null;
+            if ($request->filled('estimasi_keluar')) {
+                [$jam, $menit] = explode(':', $request->estimasi_keluar);
+                $waktuKeluar = now()->copy()->setTime((int) $jam, (int) $menit, 0);
+            }
+
             $tamu = Tamu::create([
-                'id_user' => $request->user()->id,
-                'nama' => $request->nama,
-                'alamat' => $request->alamat,
-                'keperluan' => $request->keperluan,
-                'foto_tamu' => $path,
-                'waktu_masuk' => now(),
-                'status' => $request->input('status', 'masuk'),
+                'id_user'      => $request->user()->id,
+                'nama'         => $request->nama,
+                'alamat'       => $request->alamat,
+                'keperluan'    => $request->keperluan,
+                'foto_tamu'    => $path,
+                'waktu_masuk'  => now(),
+                'waktu_keluar' => $waktuKeluar, // ← estimasi disimpan di sini
+                'status'       => $request->input('status', 'masuk'),
             ]);
+
         } catch (\Throwable $e) {
             Log::error('Gagal menyimpan data tamu', [
                 'message' => $e->getMessage(),
@@ -82,7 +92,7 @@ class TamuController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data tamu berhasil disimpan.',
-            'data' => $this->formatTamu($tamu->load('user:id,nama,foto_profil')),
+            'data'    => $this->formatTamu($tamu->load('user:id,nama,foto_profil')),
         ], 201);
     }
 
@@ -102,16 +112,16 @@ class TamuController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:masuk,keluar',
+            'status'       => 'required|in:masuk,keluar',
             'waktu_keluar' => 'nullable|date',
-            'jam_keluar' => 'nullable|string',
+            'jam_keluar'   => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -120,6 +130,9 @@ class TamuController extends Controller
         ];
 
         if ($request->status === 'keluar') {
+            // Jika ada waktu_keluar dari Flutter → pakai itu (jam aktual keluar)
+            // Jika tidak → pakai waktu sekarang
+            // Ini akan menimpa estimasi yang sebelumnya tersimpan
             $updateData['waktu_keluar'] = $request->filled('waktu_keluar')
                 ? $request->date('waktu_keluar')
                 : now();
@@ -130,7 +143,7 @@ class TamuController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Data tamu berhasil diperbarui.',
-            'data' => $this->formatTamu($tamu->fresh()->load('user:id,nama,foto_profil')),
+            'data'    => $this->formatTamu($tamu->fresh()->load('user:id,nama,foto_profil')),
         ]);
     }
 
@@ -139,18 +152,18 @@ class TamuController extends Controller
         $fotoTamu = $this->publicSupabaseUrl($tamu->foto_tamu);
 
         return [
-            'id' => $tamu->id,
-            'id_user' => $tamu->id_user,
-            'nama' => $tamu->nama,
-            'alamat' => $tamu->alamat,
-            'keperluan' => $tamu->keperluan,
-            'foto_tamu' => $fotoTamu,
-            'waktu_masuk' => $tamu->waktu_masuk?->toIso8601String(),
+            'id'           => $tamu->id,
+            'id_user'      => $tamu->id_user,
+            'nama'         => $tamu->nama,
+            'alamat'       => $tamu->alamat,
+            'keperluan'    => $tamu->keperluan,
+            'foto_tamu'    => $fotoTamu,
+            'waktu_masuk'  => $tamu->waktu_masuk?->toIso8601String(),
             'waktu_keluar' => $tamu->waktu_keluar?->toIso8601String(),
-            'status' => $tamu->status,
-            'user' => $tamu->relationLoaded('user') && $tamu->user ? [
-                'id' => $tamu->user->id,
-                'nama' => $tamu->user->nama,
+            'status'       => $tamu->status,
+            'user'         => $tamu->relationLoaded('user') && $tamu->user ? [
+                'id'          => $tamu->user->id,
+                'nama'        => $tamu->user->nama,
                 'foto_profil' => $tamu->user->foto_profil,
             ] : null,
         ];
@@ -160,7 +173,7 @@ class TamuController extends Controller
     {
         $supabaseUrl = config('services.supabase.url');
         $supabaseKey = config('services.supabase.key');
-        $bucket = config('services.supabase.bucket', 'aegis');
+        $bucket      = config('services.supabase.bucket', 'aegis');
 
         if (! $supabaseUrl || ! $supabaseKey) {
             throw new \Exception('Konfigurasi Supabase belum lengkap.');
@@ -168,7 +181,7 @@ class TamuController extends Controller
 
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$supabaseKey}",
-            'x-upsert' => 'true',
+            'x-upsert'      => 'true',
         ])->attach(
             'file',
             fopen($file->getRealPath(), 'r'),
@@ -178,9 +191,9 @@ class TamuController extends Controller
 
         if (! $response->successful()) {
             Log::error('Supabase upload foto tamu gagal', [
-                'path' => $path,
+                'path'   => $path,
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'body'   => $response->body(),
             ]);
 
             throw new \Exception('Gagal upload foto tamu.');
@@ -206,7 +219,7 @@ class TamuController extends Controller
         }
 
         $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');
-        $bucket = config('services.supabase.bucket', 'aegis');
+        $bucket      = config('services.supabase.bucket', 'aegis');
 
         return "{$supabaseUrl}/storage/v1/object/public/{$bucket}/" . ltrim($path, '/');
     }

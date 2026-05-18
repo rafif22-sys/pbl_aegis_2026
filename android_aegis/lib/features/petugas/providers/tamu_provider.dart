@@ -48,36 +48,38 @@ class TamuProvider extends ChangeNotifier {
   }
 
   Future<TamuResult> tambahTamu({
-    required String token,
-    required String nama,
-    required String alamat,
-    required String keperluan,
-    required XFile fotoTamu,
-  }) async {
-    try {
-      final tamu = await _repo.tambahTamu(
-        token: token,
-        nama: nama,
-        alamat: alamat,
-        keperluan: keperluan,
-        fotoTamu: fotoTamu,
-      );
+  required String token,
+  required String nama,
+  required String alamat,
+  required String keperluan,
+  required XFile fotoTamu,
+  String? estimasiKeluar, // ← tambahkan
+}) async {
+  try {
+    final tamu = await _repo.tambahTamu(
+      token: token,
+      nama: nama,
+      alamat: alamat,
+      keperluan: keperluan,
+      fotoTamu: fotoTamu,
+      estimasiKeluar: estimasiKeluar, // ← tambahkan
+    );
 
-      _tamuList = [tamu, ..._tamuList];
-      notifyListeners();
+    _tamuList = [tamu, ..._tamuList];
+    notifyListeners();
 
-      return TamuResult(
-        success: true,
-        message: 'Data tamu berhasil ditambahkan.',
-        data: tamu,
-      );
-    } catch (e) {
-      return TamuResult(
-        success: false,
-        message: e.toString().replaceFirst('Exception: ', ''),
-      );
-    }
+    return TamuResult(
+      success: true,
+      message: 'Data tamu berhasil ditambahkan.',
+      data: tamu,
+    );
+  } catch (e) {
+    return TamuResult(
+      success: false,
+      message: e.toString().replaceFirst('Exception: ', ''),
+    );
   }
+}
 
   Future<TamuResult> markKeluar({
     required String token,

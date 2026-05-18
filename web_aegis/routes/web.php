@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BukuTamuController;
 use App\Http\Controllers\Admin\CheckpointController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JadwalController;
@@ -66,4 +67,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/jadwal/absensi/{absensi}',      [JadwalController::class, 'update'])         ->name('jadwal.absensi.update');
     Route::delete('/jadwal/absensi/{absensi}',   [JadwalController::class, 'destroyAbsensi']) ->name('jadwal.absensi.destroy');
     Route::delete('/jadwal/template',            [JadwalController::class, 'destroyTemplate'])->name('jadwal.template.destroy');
+
+    Route::get   ('/buku-tamu',              [BukuTamuController::class, 'index'])        ->name('buku-tamu.index');
+    Route::delete('/buku-tamu/{tamu}',       [BukuTamuController::class, 'destroy'])      ->name('buku-tamu.destroy');
+    Route::delete('/buku-tamu-range',        [BukuTamuController::class, 'destroyRange']) ->name('buku-tamu.destroy-range');
 });

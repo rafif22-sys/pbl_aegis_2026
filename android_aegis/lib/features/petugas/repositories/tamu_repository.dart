@@ -15,6 +15,7 @@ class TamuRepository {
     required String alamat,
     required String keperluan,
     required XFile fotoTamu,
+    String? estimasiKeluar, // ← tambahkan
   }) {
     if (nama.trim().isEmpty ||
         alamat.trim().isEmpty ||
@@ -27,6 +28,7 @@ class TamuRepository {
       alamat: alamat.trim(),
       keperluan: keperluan.trim(),
       fotoTamu: fotoTamu,
+      estimasiKeluar: estimasiKeluar, // ← tambahkan
     );
 
     return TamuService.store(token: token, requestModel: request);

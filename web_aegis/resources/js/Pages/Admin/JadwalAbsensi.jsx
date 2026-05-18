@@ -578,8 +578,11 @@ export default function JadwalAbsensi({
             sub: 'jalur berbeda',
             blue: true,
             icon: (
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
-                    <path d="M3 12h18M3 6l9-3 9 3M3 18l9 3 9-3"/>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <circle cx="5"  cy="6"  r="2" />
+                    <circle cx="19" cy="6"  r="2" />
+                    <circle cx="12" cy="18" r="2" />
+                    <path d="M7 6h10M19 8l-7 8M5 8l7 8" />
                 </svg>
             ),
             accent: '#34d399',
@@ -602,7 +605,7 @@ export default function JadwalAbsensi({
     return (
         <>
             <Head title="Jadwal Absensi" />
-            <AdminLayout activeMenu="Jadwal Absensi" title="Jadwal Absensi">
+            <AdminLayout activeMenu="Manajemen Jadwal" title="Jadwal Absensi">
                 <div className="flex flex-col gap-3 flex-1 min-h-0">
                     <Flash />
 
