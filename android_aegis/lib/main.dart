@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // ← tambahkan ini
 import 'package:provider/provider.dart';
+
 import 'features/auth/providers/auth_provider.dart';
+import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
+
 import 'core/routes/app_routes.dart';
+
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
 import 'features/supervisor/screens/supervisor_home_screen.dart';
 import 'features/warga/screens/warga_home_screen.dart';
 
 void main() async {
-  // Diperlukan sebelum memanggil SharedPreferences
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
@@ -23,11 +27,23 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SosProvider()),
+        ChangeNotifierProvider(create: (_) => TamuProvider()),
       ],
       child: MaterialApp(
         title: 'AEGIS',
         debugShowCheckedModeBanner: false,
         routes: AppRoutes.routes,
+
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('id', 'ID'),
+          Locale('en', 'US'),
+        ],
+
         home: const AuthWrapper(),
       ),
     );
@@ -54,7 +70,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // checkAuthStatus sekarang hanya baca cache lokal (cepat),
     // server sync jalan di background — tidak memperlambat splash
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
-    if (mounted) setState(() => _isChecking = false);
+
+    if (mounted) {
+      setState(() => _isChecking = false);
+    }
   }
 
   @override
@@ -62,9 +81,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: Color(0xFF041221),
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
@@ -75,10 +92,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
         switch (auth.user!.role) {
           case 'petugas':
             return const PetugasHomeScreen();
+
           case 'supervisor':
             return const SupervisorHomeScreen();
+
           case 'warga':
             return const WargaHomeScreen();
+
           default:
             return const LoginScreen();
         }

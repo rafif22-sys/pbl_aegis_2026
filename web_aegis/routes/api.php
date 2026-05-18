@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\JadwalController;
 use App\Http\Controllers\Api\SosController;
+use App\Http\Controllers\Api\TamuController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth API (Flutter) ──────────────────────────────────
@@ -32,6 +33,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/absensi', [JadwalController::class, 'riwayatAbsensi'])->name('absensi.index');
         Route::get('/absensi/{id}', [JadwalController::class, 'showAbsensi'])->name('absensi.show');
     });
+    });
+
+    // ── Buku Tamu Routes ────────────────────────────────
+    Route::middleware('role:petugas')->group(function () {
+        Route::get('/tamu', [TamuController::class, 'index'])->name('tamu.index');
+        Route::post('/tamu', [TamuController::class, 'store'])->name('tamu.store');
+        Route::patch('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.update');
+        Route::put('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.put');
     });
 
     // ── Supervisor Routes ───────────────────────────────

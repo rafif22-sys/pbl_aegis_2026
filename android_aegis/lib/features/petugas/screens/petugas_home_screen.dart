@@ -4,7 +4,7 @@ import '../../auth/providers/auth_provider.dart';
 import 'sos_form_screen.dart';
 import 'riwayat_sos_screen.dart';
 import 'jadwal_screen.dart';
-
+import 'buku_tamu_screen.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
   const PetugasHomeScreen({super.key});
@@ -27,15 +27,12 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
 
   late AnimationController _animController;
 
-  // Header: slide dari atas + fade
   late Animation<double> _headerFade;
   late Animation<Offset> _headerSlide;
 
-  // Tombol SOS: scale + fade
   late Animation<double> _sosFade;
   late Animation<double> _sosScale;
 
-  // Tombol menu: slide dari bawah + fade
   late Animation<double> _menuFade;
   late Animation<Offset> _menuSlide;
 
@@ -48,7 +45,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       duration: const Duration(milliseconds: 1100),
     );
 
-    // Header muncul pertama (0% - 45%)
     _headerFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -65,7 +61,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       ),
     );
 
-    // Tombol SOS muncul kedua (30% - 70%) dengan efek scale
     _sosFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -79,7 +74,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       ),
     );
 
-    // Tombol menu muncul terakhir (55% - 100%) dari bawah
     _menuFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -115,7 +109,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       body: _selectedIndex == 0
           ? Column(
               children: [
-                // Header: slide dari atas
                 FadeTransition(
                   opacity: _headerFade,
                   child: SlideTransition(
@@ -123,14 +116,12 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                     child: _buildHeader(namaPetugas),
                   ),
                 ),
-
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // SOS: scale muncul dari tengah
                         FadeTransition(
                           opacity: _sosFade,
                           child: ScaleTransition(
@@ -139,7 +130,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                           ),
                         ),
                         const SizedBox(height: 28),
-                        // Menu: slide dari bawah
                         FadeTransition(
                           opacity: _menuFade,
                           child: SlideTransition(
@@ -157,8 +147,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }
-
-  // ─── HEADER ──────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(String namaPetugas) {
     return Container(
@@ -235,8 +223,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── TOMBOL SOS ──────────────────────────────────────────────────────────────
-
   Widget _buildSOSButton() {
     return GestureDetector(
       onTap: () {
@@ -311,19 +297,21 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── TOMBOL MENU ─────────────────────────────────────────────────────────────
-
   Widget _buildActionButtons() {
     return Row(
       children: [
         Expanded(
           child: GestureDetector(
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BukuTamuPage(),
+                ),
+              );
+
               // Navigator.push(context,
               //   MaterialPageRoute(builder: (_) => const BukuTamuPetugasPage()));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Membuka Buku Tamu...')),
-              );
             },
             child: _buildMenuCard(icon: Icons.badge_outlined, title: 'Buku Tamu'),
           ),
@@ -391,8 +379,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       ),
     );
   }
-
-  // ─── BOTTOM NAV BAR ───────────────────────────────────────────────────────────
 
   Widget _buildBottomNavBar() {
     return Container(
@@ -465,4 +451,3 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 }
-

@@ -1,23 +1,20 @@
-// features/petugas/screens/widgets/sos_top_toast.dart
 import 'package:flutter/material.dart';
 
-/// Dipindah dari sos_form_screen.dart agar bisa dipakai ulang di screen lain.
-/// Panggil via [SosTopToast.show] — tidak perlu instantiate manual.
-class SosTopToast {
+class NotificationScreen {
   static void show(
     BuildContext context, {
     required String message,
     required Color backgroundColor,
-    IconData icon = Icons.check_circle,
-    Color iconColor = Colors.white,
-    Color? iconBackgroundColor,
+    IconData icon = Icons.check,
+    Color iconColor = Colors.blue,
+    Color? iconBackgroundColor = Colors.white,
     Duration duration = const Duration(seconds: 3),
   }) {
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
 
     entry = OverlayEntry(
-      builder: (ctx) => _TopToastWidget(
+      builder: (ctx) => _TopNotification(
         message: message,
         backgroundColor: backgroundColor,
         icon: icon,
@@ -32,7 +29,7 @@ class SosTopToast {
   }
 }
 
-class _TopToastWidget extends StatefulWidget {
+class _TopNotification extends StatefulWidget {
   final String message;
   final Color backgroundColor;
   final IconData icon;
@@ -41,7 +38,7 @@ class _TopToastWidget extends StatefulWidget {
   final Duration duration;
   final VoidCallback onDismiss;
 
-  const _TopToastWidget({
+  const _TopNotification({
     required this.message,
     required this.backgroundColor,
     required this.icon,
@@ -52,10 +49,10 @@ class _TopToastWidget extends StatefulWidget {
   });
 
   @override
-  State<_TopToastWidget> createState() => _TopToastWidgetState();
+  State<_TopNotification> createState() => _TopNotificationState();
 }
 
-class _TopToastWidgetState extends State<_TopToastWidget>
+class _TopNotificationState extends State<_TopNotification>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slideAnimation;
@@ -120,28 +117,35 @@ class _TopToastWidgetState extends State<_TopToastWidget>
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: widget.iconBackgroundColor ?? Colors.transparent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(widget.icon, color: widget.iconColor, size: 16),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 34),
                     child: Text(
                       widget.message,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: widget.iconBackgroundColor ?? Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        color: widget.iconColor,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ],
