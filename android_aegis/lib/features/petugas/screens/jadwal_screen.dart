@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../jadwal/models/jadwal_model.dart';
-import '../../jadwal/repositories/jadwal_repository.dart';
+import '../models/jadwal_model.dart';
+import '../repositories/jadwal_repository.dart';
 
 class JadwalScreen extends StatefulWidget {
   const JadwalScreen({super.key});

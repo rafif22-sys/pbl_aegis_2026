@@ -1,22 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tamu;
+use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class TamuController extends Controller
 {
-    /**
-     * List data tamu untuk petugas.
-     * GET /api/tamu
-     */
+
     public function index()
     {
         $tamu = Tamu::with('user:id,nama,foto_profil')
@@ -26,14 +25,11 @@ class TamuController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $tamu,
+            'data'    => $tamu,
         ]);
     }
 
-    /**
-     * Simpan data tamu baru.
-     * POST /api/tamu
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -42,7 +38,7 @@ class TamuController extends Controller
             'keperluan'       => 'required|string|max:255',
             'foto_tamu'       => 'required|image|max:5120',
             'status'          => 'nullable|in:masuk,keluar',
-            'estimasi_keluar' => 'nullable|date_format:H:i', // ← tambahan
+            'estimasi_keluar' => 'nullable|date_format:Y-m-d H:i',
         ]);
 
         if ($validator->fails()) {
@@ -60,11 +56,15 @@ class TamuController extends Controller
                 $this->buildFotoPath($request->nama, $fotoTamu->getClientOriginalExtension())
             );
 
-            // Parse estimasi keluar → simpan ke waktu_keluar
+            // Parse "yyyy-MM-dd HH:mm" dari Flutter → Carbon
+            // Sertakan timezone agar jam tidak geser saat disimpan ke DB
             $waktuKeluar = null;
             if ($request->filled('estimasi_keluar')) {
-                [$jam, $menit] = explode(':', $request->estimasi_keluar);
-                $waktuKeluar = now()->copy()->setTime((int) $jam, (int) $menit, 0);
+                $waktuKeluar = Carbon::createFromFormat(
+                    'Y-m-d H:i',
+                    $request->estimasi_keluar,
+                    'Asia/Jakarta'      // sesuaikan dengan APP_TIMEZONE di .env
+                )->setSecond(0);
             }
 
             $tamu = Tamu::create([
@@ -74,7 +74,7 @@ class TamuController extends Controller
                 'keperluan'    => $request->keperluan,
                 'foto_tamu'    => $path,
                 'waktu_masuk'  => now(),
-                'waktu_keluar' => $waktuKeluar, // ← estimasi disimpan di sini
+                'waktu_keluar' => $waktuKeluar,
                 'status'       => $request->input('status', 'masuk'),
             ]);
 
@@ -96,10 +96,7 @@ class TamuController extends Controller
         ], 201);
     }
 
-    /**
-     * Update status tamu, terutama saat tamu keluar.
-     * PATCH /api/tamu/{id}
-     */
+
     public function update(Request $request, $id)
     {
         $tamu = Tamu::find($id);
@@ -125,14 +122,11 @@ class TamuController extends Controller
             ], 422);
         }
 
-        $updateData = [
-            'status' => $request->status,
-        ];
+        $updateData = ['status' => $request->status];
 
         if ($request->status === 'keluar') {
-            // Jika ada waktu_keluar dari Flutter → pakai itu (jam aktual keluar)
-            // Jika tidak → pakai waktu sekarang
-            // Ini akan menimpa estimasi yang sebelumnya tersimpan
+            // Pakai waktu_keluar dari Flutter jika ada, fallback ke now()
+            // Ini menimpa estimasi dengan jam aktual keluar
             $updateData['waktu_keluar'] = $request->filled('waktu_keluar')
                 ? $request->date('waktu_keluar')
                 : now();
@@ -151,17 +145,27 @@ class TamuController extends Controller
     {
         $fotoTamu = $this->publicSupabaseUrl($tamu->foto_tamu);
 
+        $adaWaktuKeluar = $tamu->waktu_keluar instanceof Carbon
+            ? true
+            : ($tamu->waktu_keluar !== null);
+
+        $isEstimasi  = $tamu->status === 'masuk' && $adaWaktuKeluar;
+        $waktuKeluar = $tamu->waktu_keluar?->toIso8601String();
+
         return [
-            'id'           => $tamu->id,
-            'id_user'      => $tamu->id_user,
-            'nama'         => $tamu->nama,
-            'alamat'       => $tamu->alamat,
-            'keperluan'    => $tamu->keperluan,
-            'foto_tamu'    => $fotoTamu,
-            'waktu_masuk'  => $tamu->waktu_masuk?->toIso8601String(),
-            'waktu_keluar' => $tamu->waktu_keluar?->toIso8601String(),
-            'status'       => $tamu->status,
-            'user'         => $tamu->relationLoaded('user') && $tamu->user ? [
+            'id'              => $tamu->id,
+            'id_user'         => $tamu->id_user,
+            'nama'            => $tamu->nama,
+            'alamat'          => $tamu->alamat,
+            'keperluan'       => $tamu->keperluan,
+            'foto_tamu'       => $fotoTamu,
+            'waktu_masuk'     => $tamu->waktu_masuk?->toIso8601String(),
+            // PERBAIKAN: selalu kirim waktu_keluar apa adanya dari DB
+            'waktu_keluar'    => $waktuKeluar,
+            // estimasi_keluar tetap ada untuk info tambahan
+            'estimasi_keluar' => $isEstimasi ? $waktuKeluar : null,
+            'status'          => $tamu->status,
+            'user'            => $tamu->relationLoaded('user') && $tamu->user ? [
                 'id'          => $tamu->user->id,
                 'nama'        => $tamu->user->nama,
                 'foto_profil' => $tamu->user->foto_profil,
@@ -202,11 +206,13 @@ class TamuController extends Controller
         return $path;
     }
 
+
     private function buildFotoPath(string $nama, string $extension): string
     {
         $safeExtension = $extension ?: 'jpg';
         return 'foto_tamu/' . Str::slug($nama) . '_' . Str::random(10) . ".{$safeExtension}";
     }
+
 
     private function publicSupabaseUrl(?string $path): ?string
     {

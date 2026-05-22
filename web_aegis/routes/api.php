@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('jadwal')->name('jadwal.')->group(function () {
         Route::get('/mingguan', [JadwalController::class, 'mingguan'])->name('mingguan');
         Route::get('/absensi', [JadwalController::class, 'riwayatAbsensi'])->name('absensi.index');
-        Route::get('/absensi/{id}', [JadwalController::class, 'showAbsensi'])->name('absensi.show');
+        // Route::get('/absensi/{id}', [JadwalController::class, 'showAbsensi'])->name('absensi.show');
     });
     });
 
