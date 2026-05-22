@@ -468,7 +468,7 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Stack(
                     children: [
                       Image.network(
-                        'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png',
+                        'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
                         height: 190,
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {

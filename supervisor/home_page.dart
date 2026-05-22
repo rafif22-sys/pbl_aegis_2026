@@ -1,60 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../auth/providers/auth_provider.dart';
-import 'sos_form_screen.dart';
-import 'buku_tamu_screen.dart';
-import 'laporan_patroli_screen.dart';
-import 'riwayat_sos_screen.dart';
-import 'profil_screen.dart';
+import 'sos_form.dart';
+import 'laporan_page.dart';
+import 'jadwal_page.dart';
+import 'riwayat_page.dart';
+import 'profil_page.dart';
+import 'informasi_page.dart';
+import 'buku_tamu_page.dart';
 
-class WargaHomeScreen extends StatefulWidget {
-  const WargaHomeScreen({super.key});
+class SupervisorHomePage extends StatefulWidget {
+  const SupervisorHomePage({super.key});
 
   @override
-  State<WargaHomeScreen> createState() => _WargaHomeScreenState();
+  State<SupervisorHomePage> createState() => _SupervisorHomePageState();
 }
 
-class _WargaHomeScreenState extends State<WargaHomeScreen> {
+class _SupervisorHomePageState extends State<SupervisorHomePage> {
+  // Variabel untuk melacak tab yang aktif di Bottom Navigation
   int _selectedIndex = 0;
 
+  // Daftar halaman untuk setiap tab di Bottom Navigation
   final List<Widget> _pages = [
-    const SizedBox(),
-    const RiwayatSosScreen(),
-    const ProfilScreen(),
+    const SizedBox(), // Index 0: Dikosongkan sementara untuk Beranda (Dashboard)
+    const JadwalPage(), // Index 1: Halaman Jadwal
+    const RiwayatPage(), // Index 2
+    const InformasiPage(), // Index 3
+    const ProfilPage(), // Index 4
+    const BukuTamuPage(), // Index 5: Halaman Buku Tamu
+    const LaporanPage(), // Index 6: Halaman Laporan
   ];
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final String namaWarga = authProvider.user?.nama ?? 'Warga';
-
     return Scaffold(
       backgroundColor: const Color(0xFFE6F2F9),
-      body: _selectedIndex == 0
+      body: _selectedIndex == 0 
           ? SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 20),
+              // Padding bawah dikurangi agar tidak terlalu jauh dari Bottom Nav Bar
+              padding: const EdgeInsets.only(bottom: 20), 
               child: Column(
                 children: [
-                  _buildHeader(namaWarga),
-                  const SizedBox(height: 50),
+                  _buildHeader(),
+                  
+                  const SizedBox(height: 50), // Jarak agak dijauhkan sedikit dari header
+                  
+                  // MEMANGGIL TOMBOL SOS
                   _buildSOSButton(),
-                  const SizedBox(height: 45),
-                  _buildActionButtons(),
-                  const SizedBox(height: 10),
+                  
+                  const SizedBox(height: 45), // Jarak antara SOS dan Menu 2 Kotak
+                  
+                  // MEMANGGIL MENU BUKU TAMU & LAPORAN
+                  _buildActionButtons(), 
+                  
+                  // SizedBox yang sebelumnya 40 kita hapus atau jadikan sangat kecil
+                  const SizedBox(height: 10), 
                 ],
               ),
             )
           : _pages[_selectedIndex],
+
+      // MEMANGGIL CUSTOM BOTTOM NAV BUATANMU
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-  Widget _buildHeader(String namaWarga) {
+  // --- WIDGET HEADER (Bagian Biru Tua & Logo Supabase) ---
+  Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 55, bottom: 28),
+      padding: const EdgeInsets.only(top: 80, bottom: 40),
       decoration: const BoxDecoration(
-        color: Color(0xFF142940),
+        color: Color(0xFF142940), // Warna biru dongker
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(40),
           bottomRight: Radius.circular(40),
@@ -62,14 +77,16 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
       ),
       child: Column(
         children: [
+          // Mengambil logo langsung dari Storage Supabase
           Image.network(
             'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
-            height: 160,
+            height: 240, // Silakan sesuaikan tingginya jika kurang besar/kecil
             fit: BoxFit.contain,
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
+            // Tambahkan loading builder biar nggak blank saat internet lambat
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
               return const SizedBox(
-                height: 160,
+                height: 240,
                 child: Center(
                   child: CircularProgressIndicator(
                     color: Colors.lightBlueAccent,
@@ -77,87 +94,38 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
                 ),
               );
             },
+            // Penanganan jika link error/berubah
             errorBuilder: (context, error, stackTrace) {
               return const Icon(
                 Icons.broken_image,
                 color: Colors.white54,
-                size: 70,
+                size: 80,
               );
             },
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Selamat Datang,',
-            style: TextStyle(
-              color: Colors.white60,
-              fontSize: 13,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            namaWarga,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.orange.withOpacity(0.4),
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 13,
-                  color: Colors.orange,
-                ),
-                SizedBox(width: 5),
-                Text(
-                  'Warga',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
     );
   }
 
+  // --- WIDGET TOMBOL SOS ---
   Widget _buildSOSButton() {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const SosFormScreen()),
+          MaterialPageRoute(builder: (context) => const SOSFormPage()),
         );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 24),
-        width: double.infinity,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: const Color(0xFFF09FA6).withOpacity(0.5),
           borderRadius: BorderRadius.circular(40),
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 22),
+          padding: const EdgeInsets.symmetric(vertical: 24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFED4D5C), Color(0xFFF27855)],
@@ -173,52 +141,28 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'KIRIM SOS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const Icon(
-                    Icons.shield_outlined,
-                    size: 34,
+          child: const Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.shield_outlined, size: 60, color: Colors.white),
+                Text(
+                  'SOS',
+                  style: TextStyle(
                     color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  const Text(
-                    'SOS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  // --- WIDGET TOMBOL MENU (Buku Tamu & Laporan) ---
   Widget _buildActionButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -230,7 +174,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const BukuTamuScreen()),
+                  MaterialPageRoute(builder: (context) => const BukuTamuPage()),
                 );
               },
               child: _buildMenuCard(
@@ -245,7 +189,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const LaporanPatroliScreen()),
+                  MaterialPageRoute(builder: (context) => const LaporanPage()),
                 );
               },
               child: _buildMenuCard(
@@ -259,18 +203,21 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     );
   }
 
+  // Komponen satuan untuk Tombol Menu
   Widget _buildMenuCard({required IconData icon, required String title}) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8), // Padding untuk efek border tebal
       decoration: BoxDecoration(
-        color: const Color(0xFF90C2F9).withOpacity(0.5),
+        color: const Color(
+          0xFF90C2F9,
+        ).withOpacity(0.5), // Border luar biru muda pudar
         borderRadius: BorderRadius.circular(35),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 28),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF2E8DF7), Color(0xFF1A67DD)],
+            colors: [Color(0xFF2E8DF7), Color(0xFF1A67DD)], // Gradient Biru
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -294,7 +241,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
               child: Icon(
                 icon,
                 size: 36,
-                color: const Color(0xFF1A67DD),
+                color: const Color(0xFF1A67DD), // Icon berwarna biru
               ),
             ),
             const SizedBox(height: 10),
@@ -312,6 +259,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     );
   }
 
+  // --- WIDGET CUSTOM BOTTOM NAVIGATION BAR ---
   Widget _buildBottomNavigationBar() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -331,7 +279,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildBottomNavItem(
             icon: Icons.home_filled,
@@ -339,20 +287,31 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
             index: 0,
           ),
           _buildBottomNavItem(
+            icon: Icons.calendar_month,
+            label: 'Jadwal',
+            index: 1,
+          ),
+          _buildBottomNavItem(
             icon: Icons.warning_amber_rounded,
             label: 'Riwayat',
-            index: 1,
+            index: 2,
+          ),
+          _buildBottomNavItem(
+            icon: Icons.info_outline,
+            label: 'Informasi',
+            index: 3,
           ),
           _buildBottomNavItem(
             icon: Icons.person_outline,
             label: 'Profil',
-            index: 2,
+            index: 4,
           ),
         ],
       ),
     );
   }
 
+  // Komponen satuan untuk item Bottom Navigation
   Widget _buildBottomNavItem({
     required IconData icon,
     required String label,
@@ -367,7 +326,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
         });
       },
       child: Container(
-        color: Colors.transparent,
+        color: Colors.transparent, // Agar area kliknya lebih luas
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

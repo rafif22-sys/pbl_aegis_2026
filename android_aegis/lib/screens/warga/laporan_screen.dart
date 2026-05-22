@@ -9,6 +9,12 @@ class LaporanScreen extends StatefulWidget {
 
 class _LaporanScreenState extends State<LaporanScreen> {
   int _selectedShift = 0;
+  
+  final List<Map<String, dynamic>> _dummyReports = [
+    {'status': 'Aman', 'name': 'Budi Santoso', 'time': '07.00 - 09.00', 'checkpoints': 5},
+    {'status': 'Ada Isu', 'name': 'Andi Pratama', 'time': '09.00 - 11.00', 'checkpoints': 4},
+    {'status': 'Aman', 'name': 'Rudi Hermawan', 'time': '11.00 - 13.00', 'checkpoints': 6},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -50,32 +56,21 @@ class _LaporanScreenState extends State<LaporanScreen> {
               _buildShiftTabs(),
               const SizedBox(height: 20),
               Expanded(
-                child: ListView(
-                  children: const [
-                    _OfficerCard(
-                      status: 'Aman',
-                      isAman: true,
-                      checkpointCount: 5,
-                      name: 'Budi Santoso',
-                      time: '07.00 - 09.00',
-                    ),
-                    SizedBox(height: 15),
-                    _OfficerCard(
-                      status: 'Ada Isu',
-                      isAman: false,
-                      checkpointCount: 4,
-                      name: 'Andi Pratama',
-                      time: '09.00 - 11.00',
-                    ),
-                    SizedBox(height: 15),
-                    _OfficerCard(
-                      status: 'Aman',
-                      isAman: true,
-                      checkpointCount: 6,
-                      name: 'Rudi Hermawan',
-                      time: '11.00 - 13.00',
-                    ),
-                  ],
+                child: ListView.builder(
+                  itemCount: _dummyReports.length,
+                  itemBuilder: (context, index) {
+                    final report = _dummyReports[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 15),
+                      child: _OfficerCard(
+                        status: report['status'],
+                        isAman: report['status'] == 'Aman',
+                        checkpointCount: report['checkpoints'],
+                        name: report['name'],
+                        time: report['time'],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

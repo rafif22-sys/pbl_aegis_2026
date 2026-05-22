@@ -83,6 +83,22 @@ class ProfilScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
+            // Statistics
+            GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+              childAspectRatio: 1.8,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _statCard('12', 'Laporan', Colors.blue),
+                _statCard('5', 'SOS', Colors.red),
+                _statCard('45', 'Checkpoint', Colors.green),
+                _statCard('3', 'Isu', Colors.orange),
+              ],
+            ),
+            const SizedBox(height: 32),
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -146,6 +162,36 @@ class ProfilScreen extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(String count, String label, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

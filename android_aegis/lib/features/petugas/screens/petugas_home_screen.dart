@@ -173,7 +173,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       child: Column(
         children: [
           Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png',
+            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
             height: 160,
             fit: BoxFit.contain,
             loadingBuilder: (context, child, progress) {
@@ -189,7 +189,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               return const Icon(Icons.broken_image, color: Colors.white54, size: 70);
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           const Text(
             'Selamat Datang,',
             style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),

@@ -22,7 +22,7 @@ export default function Login() {
                 <div className="w-[50%] bg-[#0F2A44] text-white flex flex-col justify-center items-center px-10">
                     
                     <img
-                        src="https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png"
+                        src="https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png"
                         alt="Aegis Logo"
                         className="w-64 h-auto object-contain mb-4"
                     />
