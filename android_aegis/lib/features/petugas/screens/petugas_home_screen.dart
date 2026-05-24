@@ -6,6 +6,7 @@ import 'riwayat_sos_screen.dart';
 import 'jadwal_screen.dart';
 import 'buku_tamu_screen.dart';
 import '../../sos/providers/sos_provider.dart';
+import 'pesan_screen.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
   const PetugasHomeScreen({super.key});
@@ -19,11 +20,11 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const SizedBox(),           // Index 0: Beranda (dihandle di body)
-    const JadwalScreen(),       // Index 1: Jadwal
-    const RiwayatSosScreen(),     // Index 2: Riwayat ← ganti ini
-    const SizedBox(),           // Index 3: Informasi
-    const SizedBox(),           // Index 4: Profil
+    const SizedBox(),
+    const SizedBox(),
+    const RiwayatSosScreen(),
+    const SizedBox(),
+    const SizedBox(),
   ];
 
   late AnimationController _animController;
@@ -205,9 +206,9 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.lightBlueAccent.withOpacity(0.15),
+              color: Colors.lightBlueAccent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.4)),
+              border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -243,7 +244,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF09FA6).withOpacity(0.5),
+          color: const Color(0xFFF09FA6).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(40),
         ),
         child: Container(
@@ -257,7 +258,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: Colors.redAccent.withOpacity(0.4),
+                color: Colors.redAccent.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
               ),
@@ -283,7 +284,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -343,7 +344,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFF90C2F9).withOpacity(0.5),
+        color: const Color(0xFF90C2F9).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(35),
       ),
       child: Container(
@@ -357,7 +358,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.4),
+              color: Colors.blue.withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -399,7 +400,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 5,
             offset: const Offset(0, -5),
