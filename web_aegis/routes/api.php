@@ -5,6 +5,7 @@ use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\JadwalController;
 use App\Http\Controllers\API\SosController;
 use App\Http\Controllers\API\TamuController;
+use App\Http\Controllers\API\PesanController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth API (Flutter) ──────────────────────────────────
@@ -57,7 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:petugas,supervisor,warga')->group(function () {
         Route::post('/sos', [SosController::class, 'store'])->name('sos.store');
         Route::get('/sos/{id}', [SosController::class, 'show'])->name('sos.show');
-         Route::get('/sos', [SosController::class, 'index'])->name('sos.index');
+        Route::get('/sos', [SosController::class, 'index'])->name('sos.index');
+        Route::get('/pesan', [PesanController::class, 'index'])->name('pesan.index');
     });
 
     Route::post('/user/fcm-token', [AuthController::class, 'saveFcmToken']);
