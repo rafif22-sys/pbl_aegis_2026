@@ -29,6 +29,7 @@ class User extends Authenticatable
         'tanggal_bergabung',
         'wilayah_pengawasan',
         'foto_profil',
+        'fcm_token',
     ];
 
     /**

@@ -8,6 +8,7 @@ import 'profil_page.dart';
 import 'informasi_page.dart';
 import 'buku_tamu_page.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../sos/providers/sos_provider.dart';
 
 class SupervisorHomePage extends StatefulWidget {
   const SupervisorHomePage({super.key});
@@ -19,6 +20,17 @@ class SupervisorHomePage extends StatefulWidget {
 class _SupervisorHomePageState extends State<SupervisorHomePage> {
   // Variabel untuk melacak tab yang aktif di Bottom Navigation
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<SosProvider>().fetchListSOS(token: token);
+      }
+    });
+  }
 
   // Daftar halaman untuk setiap tab di Bottom Navigation
   final List<Widget> _pages = [
@@ -414,6 +426,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
     required int index,
   }) {
     bool isSelected = _selectedIndex == index;
+    bool hasMenungguBantuan = label == 'Riwayat' && context.watch<SosProvider>().totalMenunggu > 0;
 
     return GestureDetector(
       onTap: () {
@@ -434,12 +447,30 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                icon,
-                size: 26,
-                color: isSelected
-                    ? const Color(0xFF2280F0)
-                    : Colors.grey.shade400,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    size: 26,
+                    color: isSelected
+                        ? const Color(0xFF2280F0)
+                        : Colors.grey.shade400,
+                  ),
+                  if (hasMenungguBantuan)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 4),

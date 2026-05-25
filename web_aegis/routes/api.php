@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ForgotPasswordController;
-use App\Http\Controllers\Api\JadwalController;
-use App\Http\Controllers\Api\SosController;
-use App\Http\Controllers\Api\TamuController;
+use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\ForgotPasswordController;
+use App\Http\Controllers\API\JadwalController;
+use App\Http\Controllers\API\SosController;
+use App\Http\Controllers\API\TamuController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth API (Flutter) ──────────────────────────────────
@@ -59,4 +59,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/sos/{id}', [SosController::class, 'show'])->name('sos.show');
          Route::get('/sos', [SosController::class, 'index'])->name('sos.index');
     });
+
+    Route::post('/user/fcm-token', [AuthController::class, 'saveFcmToken']);
 });

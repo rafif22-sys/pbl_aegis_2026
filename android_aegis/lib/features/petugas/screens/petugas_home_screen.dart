@@ -5,6 +5,7 @@ import 'sos_form_screen.dart';
 import 'riwayat_sos_screen.dart';
 import 'jadwal_screen.dart';
 import 'buku_tamu_screen.dart';
+import '../../sos/providers/sos_provider.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
   const PetugasHomeScreen({super.key});
@@ -39,6 +40,13 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<SosProvider>().fetchListSOS(token: token);
+      }
+    });
 
     _animController = AnimationController(
       vsync: this,
@@ -417,6 +425,8 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     required int index,
   }) {
     final bool isSelected = _selectedIndex == index;
+    final bool hasMenungguBantuan = label == 'Riwayat' && context.watch<SosProvider>().totalMenunggu > 0;
+
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: Container(
@@ -430,10 +440,28 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                 color: isSelected ? const Color(0xFFE4F1FA) : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade400,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade400,
+                  ),
+                  if (hasMenungguBantuan)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 3),

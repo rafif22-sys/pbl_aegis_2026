@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // ← tambahkan
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -18,41 +19,33 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _token != null && _user != null;
 
   // ── Dipanggil AuthWrapper saat app dibuka ──────────────
-  // Alur:
-  //   1. Baca cache lokal → jika ada, langsung authenticated (tidak tunggu server)
-  //   2. Sync server di background → jika 401, baru paksa logout
-  //      jika server mati (SocketException/Timeout), biarkan pakai cache
   Future<void> checkAuthStatus() async {
     final cache = await AuthService.getLocalSession();
 
     if (cache.token == null || cache.user == null) {
-      // Belum pernah login
       notifyListeners();
       return;
     }
 
-    // Ada cache → langsung set state (UI tidak terblokir)
     _token = cache.token;
     _user  = cache.user;
     notifyListeners();
 
-    // Sync ke server secara background (fire-and-forget)
     _syncWithServer(cache.token!);
+
+    // ← Kirim ulang FCM token saat app dibuka (token bisa berubah)
+    _sendFcmToken(cache.token!);
   }
 
   Future<void> _syncWithServer(String token) async {
     try {
       final freshUser = await AuthService.getMe(token);
-      // Berhasil → perbarui data user (misal foto profil berubah)
       _user = freshUser;
       notifyListeners();
     } on Exception catch (e) {
       if (e.toString().contains('unauthorized')) {
-        // Token sudah di-revoke di server (admin paksa logout, dll)
-        // → baru paksa user login ulang
         await _forceLogout();
       }
-      // SocketException / TimeoutException → server mati, diam saja
     }
   }
 
@@ -69,8 +62,11 @@ class AuthProvider extends ChangeNotifier {
         _token = response['token'] as String;
         _user  = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
-        // Simpan token + data user ke cache lokal
         await AuthService.saveSession(_token!, _user!);
+
+        // ← Kirim FCM token setelah login berhasil
+        _sendFcmToken(_token!);
+
       } else {
         _errorMessage = (response['message'] as String?) ?? 'Login gagal, coba lagi.';
       }
@@ -86,15 +82,33 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Logout normal (tombol logout di app) ───────────────
+  // ── Kirim FCM token ke Laravel ─────────────────────────
+  Future<void> _sendFcmToken(String authToken) async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null) return;
+
+      await AuthService.saveFcmToken(authToken, fcmToken);
+
+      // Pantau jika Firebase memperbarui token (reinstall, dll)
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        AuthService.saveFcmToken(authToken, newToken);
+      });
+
+    } catch (e) {
+      // Gagal simpan FCM token tidak perlu crash app
+      debugPrint('FCM token error: $e');
+    }
+  }
+
+  // ── Logout normal ──────────────────────────────────────
   Future<void> logout() async {
-    // Kirim request logout ke server (best-effort, boleh gagal)
     if (_token != null) await AuthService.logout(_token!);
     _clearState();
     notifyListeners();
   }
 
-  // ── Paksa logout karena server balas 401 ───────────────
+  // ── Paksa logout karena 401 ────────────────────────────
   Future<void> _forceLogout() async {
     await AuthService.clearSession();
     _clearState();
@@ -102,8 +116,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _clearState() {
-    _token = null;
-    _user  = null;
+    _token        = null;
+    _user         = null;
     _errorMessage = null;
   }
 }

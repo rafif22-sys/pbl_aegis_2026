@@ -61,6 +61,8 @@ class SosController extends Controller
             'bantuan_warga' => $butuhWarga,
         ]);
 
+        app(\App\Services\FcmService::class)->sendSosNotification($sos);
+
         return response()->json([
             'success' => true,
             'message' => 'SOS berhasil dikirim.',
