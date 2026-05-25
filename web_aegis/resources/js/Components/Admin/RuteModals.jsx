@@ -121,6 +121,17 @@ export function DetailModal({ rute, ruteIndex, onClose, onEdit }) {
     );
 }
 
+function hitungJarak(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) *
+              Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export function RuteModal({ mode, rute, allCheckpoints, onClose, onSubmit }) {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
@@ -140,17 +151,67 @@ export function RuteModal({ mode, rute, allCheckpoints, onClose, onSubmit }) {
     const available = (allCheckpoints ?? []).filter(cp => !selected.includes(cp.id));
     const selectedDetails = selected.map(id => (allCheckpoints ?? []).find(cp => cp.id === id)).filter(Boolean);
 
-    const addCp = (id) => setSelected(prev => [...prev, id]);
+    const addCp = (id) => {
+        if (selected.length === 0) {
+            setSelected(prev => [...prev, id]);
+            return;
+        }
+
+        // Cek jarak dengan checkpoint terakhir
+        const lastId = selected[selected.length - 1];
+        const lastCp = (allCheckpoints ?? []).find(cp => cp.id === lastId);
+        const newCp  = (allCheckpoints ?? []).find(cp => cp.id === id);
+
+        if (lastCp && newCp) {
+            const jarak = hitungJarak(
+                parseFloat(lastCp.latitude),  parseFloat(lastCp.longitude),
+                parseFloat(newCp.latitude),   parseFloat(newCp.longitude),
+            );
+            if (jarak > 500) {
+                setErrors(prev => ({
+                    ...prev,
+                    checkpoints: `Jarak antara "${lastCp.nama}" dan "${newCp.nama}" terlalu jauh (${Math.round(jarak)} m). Maksimal 500 m.`,
+                }));
+                return;
+            }
+        }
+
+        setErrors(prev => ({ ...prev, checkpoints: undefined }));
+        setSelected(prev => [...prev, id]);
+    };
     const removeCp = (id) => setSelected(prev => prev.filter(x => x !== id));
+    const validateUrutan = (newSelected) => {
+        const details = newSelected.map(id => (allCheckpoints ?? []).find(cp => cp.id === id)).filter(Boolean);
+        for (let i = 0; i < details.length - 1; i++) {
+            const a = details[i], b = details[i + 1];
+            const jarak = hitungJarak(
+                parseFloat(a.latitude), parseFloat(a.longitude),
+                parseFloat(b.latitude), parseFloat(b.longitude),
+            );
+            if (jarak > 500) {
+                setErrors(prev => ({
+                    ...prev,
+                    checkpoints: `Jarak antara "${a.nama}" dan "${b.nama}" terlalu jauh (${Math.round(jarak)} m). Maksimal 500 m.`,
+                }));
+                return false;
+            }
+        }
+        setErrors(prev => ({ ...prev, checkpoints: undefined }));
+        return true;
+    };
+
     const moveUp = (idx) => {
         if (idx === 0) return;
-        setSelected(prev => { const a = [...prev];[a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a; });
+        const a = [...selected];
+        [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]];
+        if (validateUrutan(a)) setSelected(a);
     };
+
     const moveDown = (idx) => {
-        setSelected(prev => {
-            if (idx === prev.length - 1) return prev;
-            const a = [...prev];[a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a;
-        });
+        if (idx === selected.length - 1) return;
+        const a = [...selected];
+        [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]];
+        if (validateUrutan(a)) setSelected(a);
     };
 
     const handleSubmit = (e) => {

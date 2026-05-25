@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // ← tambahkan ini
 import 'package:provider/provider.dart';
+
 import 'features/auth/providers/auth_provider.dart';
-import 'features/sos/providers/sos_provider.dart';        // ← tambah import ini
+import 'features/petugas/providers/tamu_provider.dart';
+import 'features/sos/providers/sos_provider.dart';
+
 import 'core/routes/app_routes.dart';
+
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
-import 'features/supervisor/screens/supervisor_home_screen.dart';
+import 'features/supervisor/screens/home_page.dart';
 import 'features/warga/screens/warga_home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -20,19 +26,29 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => SosProvider()),  // ← tambah ini
+        ChangeNotifierProvider(create: (_) => SosProvider()),
+        ChangeNotifierProvider(create: (_) => TamuProvider()),
       ],
       child: MaterialApp(
         title: 'AEGIS',
         debugShowCheckedModeBanner: false,
         routes: AppRoutes.routes,
+
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('id', 'ID'),
+          Locale('en', 'US'),
+        ],
+
         home: const AuthWrapper(),
       ),
     );
   }
 }
-
-// ... sisa kode tidak berubah
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -51,37 +67,37 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuth() async {
+    // checkAuthStatus sekarang hanya baca cache lokal (cepat),
+    // server sync jalan di background — tidak memperlambat splash
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
-    if (mounted) setState(() => _isChecking = false);
+
+    if (mounted) {
+      setState(() => _isChecking = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Selama cek token: tampilkan splash screen
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: Color(0xFF041221),
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
-    // Setelah cek selesai: langsung return halaman yang tepat
-    // tanpa melewati LoginScreen sama sekali
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        if (!auth.isLoggedIn) {
-          return const LoginScreen();
-        }
+        if (!auth.isLoggedIn) return const LoginScreen();
 
         switch (auth.user!.role) {
           case 'petugas':
             return const PetugasHomeScreen();
+
           case 'supervisor':
-            return const SupervisorHomeScreen();
+            return const SupervisorHomePage();
           case 'warga':
             return const WargaHomeScreen();
+
           default:
             return const LoginScreen();
         }

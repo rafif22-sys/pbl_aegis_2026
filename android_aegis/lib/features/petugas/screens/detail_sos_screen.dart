@@ -140,7 +140,7 @@ class _DetailSosScreenState extends State<DetailSosScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F1FB),
+      backgroundColor: const Color(0xFFDCEFFE),  
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

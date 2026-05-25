@@ -243,150 +243,157 @@ class _SOSFormScreenState extends State<SOSFormScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        titleSpacing: 0,  
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Text(
+          'Kirim SOS',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+      body: SingleChildScrollView(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Header ────────────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD30000),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Header ────────────────────────────────────────────────
+                child: const Icon(
+                  Icons.shield_outlined,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'PANGGILAN SOS',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Pilih keadaan darurat:',
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Widget: GPS Status ────────────────────────────────────
+              SosGpsStatus(
+                isLoading:  _isLoadingGps,
+                isDetected: _currentPosition != null,
+                onRetry:    _getLocation,
+              ),
+              const SizedBox(height: 12),
+
+              // ── Widget: Grid Kategori ─────────────────────────────────
+              SosCategoryGrid(
+                selected: _selectedCategory,
+                disabled: _isLainnyaChecked,
+                onSelect: (title) => setState(() {
+                  _selectedCategory = title;
+                  _isLainnyaChecked = false;
+                  _triedToSubmit = false;
+                  _errorMessage = null;
+                }),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Widget: Checkbox Lainnya + TextField ──────────────────
+              SosLainnyaField(
+                isChecked:  _isLainnyaChecked,
+                showError:  _triedToSubmit && _deskripsiError,
+                controller: _deskripsiController,
+                focusNode:  _deskripsiFocusNode,
+                onChanged:  _onLainnyaChanged,
+              ),
+              const SizedBox(height: 16),
+
+              // ── Widget: Toggle Bantuan Warga ──────────────────────────
+              const Text(
+                'APAKAH BUTUH BANTUAN SEMUA WARGA?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SosBantuanWargaToggle(
+                value:     _butuhBantuanWarga,
+                onChanged: (v) => setState(() => _butuhBantuanWarga = v),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Pesan Error ───────────────────────────────────────────
+              if (_errorMessage != null)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD30000),
+                    color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade200),
                   ),
-                  child: const Icon(
-                    Icons.shield_outlined,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'PANGGILAN SOS',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Pilih keadaan darurat:',
-                  style: TextStyle(color: Colors.black54),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Widget: GPS Status ────────────────────────────────────
-                SosGpsStatus(
-                  isLoading:   _isLoadingGps,
-                  isDetected:  _currentPosition != null,
-                  onRetry:     _getLocation,
-                ),
-                const SizedBox(height: 16),
-
-                // ── Widget: Grid Kategori ─────────────────────────────────
-                SosCategoryGrid(
-                  selected: _selectedCategory,
-                  disabled: _isLainnyaChecked,
-                  onSelect: (title) => setState(() {
-                    _selectedCategory = title;
-                    _isLainnyaChecked = false;
-                    _triedToSubmit = false;
-                    _errorMessage = null;
-                  }),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Widget: Checkbox Lainnya + TextField ──────────────────
-                SosLainnyaField(
-                  isChecked:  _isLainnyaChecked,
-                  showError:  _triedToSubmit && _deskripsiError,
-                  controller: _deskripsiController,
-                  focusNode:  _deskripsiFocusNode,
-                  onChanged:  _onLainnyaChanged,
-                ),
-                const SizedBox(height: 24),
-
-                // ── Widget: Toggle Bantuan Warga ──────────────────────────
-                const Text(
-                  'APAKAH BUTUH BANTUAN SEMUA WARGA?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SosBantuanWargaToggle(
-                  value:     _butuhBantuanWarga,
-                  onChanged: (v) => setState(() => _butuhBantuanWarga = v),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Pesan Error ───────────────────────────────────────────
-                if (_errorMessage != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: Colors.red.shade800,
+                      fontSize: 12,
                     ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: Colors.red.shade800,
-                        fontSize: 12,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    textAlign: TextAlign.center,
                   ),
-
-                // ── Widget: Tombol Batal & Kirim ──────────────────────────
-                SosActionButtons(
-                  isLoading:           _isLoading,
-                  isLoadingGps:        _isLoadingGps,
-                  hasSelectedCategory: _hasSelectedCategory,
-                  onBatal:             () => Navigator.pop(context),
-                  onKirim: () {
-                    if (!_hasSelectedCategory) {
-                      SosTopToast.show(
-                        context,
-                        message:         'Pilih jenis keadaan darurat terlebih dahulu',
-                        backgroundColor: const Color(0xFFE65100),
-                        icon:            Icons.warning_amber_rounded,
-                        duration:        const Duration(seconds: 2),
-                      );
-                      return;
-                    }
-                    _kirimSOS();
-                  },
                 ),
-              ],
-            ),
+
+              // ── Widget: Tombol Batal & Kirim ──────────────────────────
+              SosActionButtons(
+                isLoading:           _isLoading,
+                isLoadingGps:        _isLoadingGps,
+                hasSelectedCategory: _hasSelectedCategory,
+                onBatal:             () => Navigator.pop(context),
+                onKirim: () {
+                  if (!_hasSelectedCategory) {
+                    SosTopToast.show(
+                      context,
+                      message:         'Pilih jenis keadaan darurat terlebih dahulu',
+                      backgroundColor: const Color(0xFFE65100),
+                      icon:            Icons.warning_amber_rounded,
+                      duration:        const Duration(seconds: 2),
+                    );
+                    return;
+                  }
+                  _kirimSOS();
+                },
+              ),
+            ],
           ),
         ),
       ),

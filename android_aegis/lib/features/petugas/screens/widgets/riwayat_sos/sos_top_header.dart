@@ -23,7 +23,7 @@ class SosTopHeader extends StatelessWidget {
             height: 30,
             width: 30,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) =>
+            errorBuilder: (_, _, _) =>
                 const Icon(Icons.pets, color: Colors.lightBlueAccent, size: 40),
           ),
           const SizedBox(width: 10),

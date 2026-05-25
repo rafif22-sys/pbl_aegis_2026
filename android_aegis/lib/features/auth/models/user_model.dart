@@ -40,4 +40,19 @@ class UserModel {
       supervisor: json['supervisor'],
     );
   }
+
+  // ← BARU: diperlukan untuk simpan ke SharedPreferences
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nama': nama,
+        'email': email,
+        'role': role,
+        'tanggal_lahir': tanggalLahir,
+        'alamat': alamat,
+        'no_hp': noHp,
+        'foto_profil': fotoProfil,
+        'tanggal_bergabung': tanggalBergabung,
+        'wilayah_pengawasan': wilayahPengawasan,
+        'supervisor': supervisor,
+      };
 }
