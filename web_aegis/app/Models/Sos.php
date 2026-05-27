@@ -22,13 +22,14 @@ class Sos extends Model
         'bantuan_warga',
         'dikonfirmasi_oleh',
         'waktu_konfirmasi',
+        'penanganan',
     ];
 
     protected $casts = [
         'latitude'         => 'float',
         'longitude'        => 'float',
         'waktu_kirim'      => 'datetime',
-        'waktu_konfirmasi' => 'datetime', // ← tambah
+        'waktu_konfirmasi' => 'datetime', 
         'bantuan_warga'    => 'boolean',
     ];
 

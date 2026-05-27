@@ -9,9 +9,12 @@ import 'informasi_page.dart';
 import 'buku_tamu_page.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../sos/providers/sos_provider.dart';
+import '../../../core/services/notification_service.dart';
+import 'dart:async';
 
 class SupervisorHomePage extends StatefulWidget {
-  const SupervisorHomePage({super.key});
+  final int initialIndex;
+  const SupervisorHomePage({super.key, this.initialIndex = 0});
 
   @override
   State<SupervisorHomePage> createState() => _SupervisorHomePageState();
@@ -19,11 +22,22 @@ class SupervisorHomePage extends StatefulWidget {
 
 class _SupervisorHomePageState extends State<SupervisorHomePage> {
   // Variabel untuk melacak tab yang aktif di Bottom Navigation
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+  late StreamSubscription _tabSub;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    
+    _tabSub = NotificationService.tabStream.stream.listen((index) {
+      if (mounted) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
@@ -42,6 +56,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
     const BukuTamuPage(), // Index 5: Halaman Buku Tamu
     const LaporanPage(), // Index 6: Halaman Laporan
   ];
+
+  @override
+  void dispose() {
+    _tabSub.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

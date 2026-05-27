@@ -18,10 +18,12 @@ import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
 import 'features/supervisor/screens/home_page.dart';
 import 'features/warga/screens/warga_home_screen.dart';
+import 'features/petugas/screens/pesan_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.showLocalNotification(message);
 }
 
 void main() async {
@@ -77,7 +79,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isChecking = true;
-  String? _pendingSosId;
+  String? _pendingPayload;
 
   @override
   void initState() {
@@ -86,10 +88,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuth() async {
-    final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial != null) {
-      _pendingSosId = initial.data['sos_id'];
-    }
+    _pendingPayload = await NotificationService.getInitialPayload();
 
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
 
@@ -111,28 +110,37 @@ class _AuthWrapperState extends State<AuthWrapper> {
       builder: (context, auth, _) {
         if (!auth.isLoggedIn) return const LoginScreen();
 
-        if (_pendingSosId != null) {
-          final sosId = _pendingSosId!;
-
-          return SosLoadingScreen(      // ← gunakan widget terpisah
-            sosId: sosId,
-            token: auth.token!,
-            role: auth.user!.role,
-            onDone: () {
-              if (mounted) {
-                setState(() {
-                  _pendingSosId = null;
-                });
-              }
-            },
-          );
+        int initialTab = 0;
+        if (_pendingPayload != null) {
+          final payload = _pendingPayload!;
+          
+          if (payload.startsWith('sos:')) {
+            final sosId = payload.replaceFirst('sos:', '');
+            return SosLoadingScreen(
+              sosId: sosId,
+              token: auth.token!,
+              role: auth.user!.role,
+              onDone: () {
+                if (mounted) {
+                  setState(() {
+                    _pendingPayload = null;
+                  });
+                }
+              },
+            );
+          } else if (payload.startsWith('info:')) {
+            initialTab = 3;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _pendingPayload = null);
+            });
+          }
         }
 
         switch (auth.user!.role) {
           case 'petugas':
-            return const PetugasHomeScreen();
+            return PetugasHomeScreen(initialIndex: initialTab);
           case 'supervisor':
-            return const SupervisorHomePage();
+            return SupervisorHomePage(initialIndex: initialTab);
           case 'warga':
             return const WargaHomeScreen();
           default:

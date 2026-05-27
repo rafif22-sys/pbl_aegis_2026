@@ -164,6 +164,43 @@ class SosKonfirmasiButton extends StatelessWidget {
               ],
             ),
           ),
+
+          if (sos.penanganan != null && sos.penanganan!.isNotEmpty) ...[
+            Container(height: 1, color: Colors.white.withOpacity(0.15)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.assignment_turned_in_outlined,
+                          size: 13, color: Colors.white60),
+                      SizedBox(width: 6),
+                      Text(
+                        'PENANGANAN',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    sos.penanganan!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

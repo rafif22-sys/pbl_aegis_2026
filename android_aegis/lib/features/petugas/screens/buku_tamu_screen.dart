@@ -309,15 +309,32 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
       );
     }
 
-    return Column(
-      children: filtered
-          .map((tamu) => GuestCard(
-                tamu: tamu,
-                showAllDates: _showAllDates,
-                onTap: () => _openDetailDialog(tamu),
-              ))
-          .toList(),
-    );
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.hardEdge, // supaya card pojok ikut rounded
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          ...filtered
+              .map((tamu) => GuestCard(
+                    tamu: tamu,
+                    showAllDates: _showAllDates,
+                    onTap: () => _openDetailDialog(tamu),
+                  ))
+              .toList(),
+        ],
+      ),
+          );
   }
 
   String get _emptyMessage {

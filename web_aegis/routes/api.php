@@ -59,7 +59,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sos', [SosController::class, 'store'])->name('sos.store');
         Route::get('/sos/{id}', [SosController::class, 'show'])->name('sos.show');
         Route::get('/sos', [SosController::class, 'index'])->name('sos.index');
+    });
+
+    Route::middleware('role:petugas,supervisor')->group(function () {
+        Route::get('/pesan/unread-count', [PesanController::class, 'unreadCount'])->name('pesan.unread-count');
         Route::get('/pesan', [PesanController::class, 'index'])->name('pesan.index');
+        Route::post('/pesan/mark-read', [PesanController::class, 'markRead'])->name('pesan.mark-read');
+        Route::post('/pesan/{id}/favorit', [PesanController::class, 'toggleFavorit'])->name('pesan.favorit');
     });
 
     Route::post('/user/fcm-token', [AuthController::class, 'saveFcmToken']);

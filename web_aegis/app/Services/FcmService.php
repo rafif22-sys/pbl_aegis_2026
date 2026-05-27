@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Sos;
+use App\Models\Informasi;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,12 +24,11 @@ class FcmService
      */
     public function sendSosNotification(Sos $sos): void
     {
-        
         $tokens = User::whereNotNull('fcm_token')
-            ->where('id', '!=', $sos->id_user)  
-            ->distinct('fcm_token')              
+            ->where('id', '!=', $sos->id_user)
             ->pluck('fcm_token')
-            ->unique()                           
+            ->unique()
+            ->values()
             ->toArray();
 
         if (empty($tokens)) return;
@@ -43,13 +43,14 @@ class FcmService
 
         $judul = '🚨 SOS ' . ($jenisLabel[$sos->jenis_keadaan] ?? 'Darurat');
         $body  = $sos->deskripsi;
-
-        $data = [
+        $data  = [
             'sos_id'    => (string) $sos->id,
             'jenis'     => $sos->jenis_keadaan,
             'latitude'  => (string) $sos->latitude,
             'longitude' => (string) $sos->longitude,
             'type'      => 'sos_baru',
+            'title'     => $judul,
+            'body'      => $body,
         ];
 
         $accessToken = $this->getAccessToken();
@@ -58,7 +59,69 @@ class FcmService
         foreach ($tokens as $token) {
             $this->kirimKeToken($token, $judul, $body, $data, $accessToken);
         }
-        Log::info('FCM - jumlah token yang dikirim: ' . count($tokens));
+
+        Log::info('FCM SOS - jumlah token: ' . count($tokens));
+    }
+
+    /**
+     * Kirim notifikasi informasi baru
+     * - Admin → semua petugas & supervisor
+     * - Supervisor → petugas yang diawasi supervisor tersebut
+     */
+    public function sendInformasiNotification(Informasi $informasi): void
+    {
+        $pengirim = $informasi->user;
+        if (!$pengirim) return;
+
+        $tokens = collect();
+
+        if ($pengirim->role === 'admin') {
+            $tokens = User::whereNotNull('fcm_token')
+                ->whereIn('role', ['petugas', 'supervisor'])
+                ->where('id', '!=', $pengirim->id)
+                ->pluck('fcm_token')
+                ->unique()
+                ->values();
+
+        } elseif ($pengirim->role === 'supervisor') {
+            $tokens = User::whereNotNull('fcm_token')
+                ->where('role', 'petugas')
+                ->where('id_supervisor', $pengirim->id)
+                ->pluck('fcm_token')
+                ->unique()
+                ->values();
+        }
+
+        if ($tokens->isEmpty()) return;
+
+        $namaPengirim = match ($pengirim->role) {
+            'admin'      => 'Admin',
+            'supervisor' => 'Supervisor',
+            default      => $pengirim->nama,
+        };
+
+        $judul = '📢 Informasi Baru dari ' . $namaPengirim;
+        $body  = strlen($informasi->pesan) > 100
+            ? substr($informasi->pesan, 0, 100) . '...'
+            : $informasi->pesan;
+
+        $data = [
+            'informasi_id'  => (string) $informasi->id,
+            'type'          => 'informasi_baru',
+            'pengirim'      => $namaPengirim,
+            'role_pengirim' => $pengirim->role,
+            'title'         => $judul,
+            'body'          => $body,
+        ];
+
+        $accessToken = $this->getAccessToken();
+        if (!$accessToken) return;
+
+        foreach ($tokens as $token) {
+            $this->kirimKeToken($token, $judul, $body, $data, $accessToken);
+        }
+
+        Log::info('FCM Informasi - jumlah token: ' . count($tokens));
     }
 
     /**
@@ -72,24 +135,21 @@ class FcmService
         string $accessToken,
     ): void {
         try {
+            // Tentukan channel_id berdasarkan type
+            $channelId = ($data['type'] ?? '') === 'informasi_baru'
+                ? 'info_channel'
+                : 'sos_channel';
+
             $response = Http::withToken($accessToken)
                 ->timeout(10)
                 ->post(
                     "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send",
                     [
                         'message' => [
-                            'token'        => $token,
-                            'notification' => [
-                                'title' => $judul,
-                                'body'  => $body,
-                            ],
+                            'token'   => $token,
                             'data'    => $data,
                             'android' => [
                                 'priority' => 'high',
-                                'notification' => [
-                                    'channel_id'   => 'sos_channel',
-                                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
-                                ],
                             ],
                         ],
                     ]
@@ -102,7 +162,6 @@ class FcmService
                     'body'   => $response->body(),
                 ]);
 
-                // Hapus token yang sudah tidak valid (uninstall app)
                 if ($response->status() === 404) {
                     User::where('fcm_token', $token)
                         ->update(['fcm_token' => null]);
@@ -148,9 +207,6 @@ class FcmService
         }
     }
 
-    /**
-     * Buat JWT tanpa library tambahan
-     */
     private function buatJwt(array $claim, string $privateKey): string
     {
         $header  = $this->base64url(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));

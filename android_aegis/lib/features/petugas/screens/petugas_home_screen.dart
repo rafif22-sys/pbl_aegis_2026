@@ -7,9 +7,12 @@ import 'jadwal_screen.dart';
 import 'buku_tamu_screen.dart';
 import '../../sos/providers/sos_provider.dart';
 import 'pesan_screen.dart';
+import '../../../core/services/notification_service.dart';
+import 'dart:async';
 
 class PetugasHomeScreen extends StatefulWidget {
-  const PetugasHomeScreen({super.key});
+  final int initialIndex;
+  const PetugasHomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<PetugasHomeScreen> createState() => _PetugasHomeScreenState();
@@ -17,7 +20,8 @@ class PetugasHomeScreen extends StatefulWidget {
 
 class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+  late StreamSubscription _tabSub;
 
   final List<Widget> _pages = [
     const SizedBox(),
@@ -41,6 +45,16 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    
+    // Listen for tab change from NotificationService
+    _tabSub = NotificationService.tabStream.stream.listen((index) {
+      if (mounted) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final token = context.read<AuthProvider>().token;
@@ -104,6 +118,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
 
   @override
   void dispose() {
+    _tabSub.cancel();
     _animController.dispose();
     super.dispose();
   }

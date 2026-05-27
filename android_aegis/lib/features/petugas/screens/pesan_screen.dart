@@ -21,12 +21,29 @@ class _MessageScreenState extends State<MessageScreen> {
   String? _errorMessage;
   List<_MessageItem> _messages = [];
 
+  static const _filterValues = ['semua', 'belum_dibaca', 'favorit'];
+
   @override
   void initState() {
     super.initState();
+    _markRead(); // tandai sudah dibaca saat halaman dibuka
     _fetchMessages();
   }
 
+  String get _token =>
+      Provider.of<AuthProvider>(context, listen: false).token ?? '';
+
+  // ── Mark semua pesan sudah dibaca ──────────────────────────────────────────
+  Future<void> _markRead() async {
+    try {
+      await http.post(
+        Uri.parse('${ApiClient.baseUrl}/pesan/mark-read'),
+        headers: ApiClient.headers(token: _token),
+      );
+    } catch (_) {}
+  }
+
+  // ── Fetch pesan sesuai filter aktif ────────────────────────────────────────
   Future<void> _fetchMessages() async {
     setState(() {
       _isLoading = true;
@@ -34,12 +51,21 @@ class _MessageScreenState extends State<MessageScreen> {
     });
 
     try {
-      final token = Provider.of<AuthProvider>(context, listen: false).token;
-      if (token == null) {
-        throw Exception('Sesi login tidak ditemukan.');
+      final filter = _filterValues[_selectedFilterIndex];
+      final uri = Uri.parse('${ApiClient.baseUrl}/pesan')
+          .replace(queryParameters: {'filter': filter});
+
+      final response = await http.get(
+        uri,
+        headers: ApiClient.headers(token: _token),
+      );
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode != 200 || body['success'] != true) {
+        throw Exception(body['message'] ?? 'Gagal mengambil pesan.');
       }
 
-      final data = await _selectPesan(token);
+      final data = List<Map<String, dynamic>>.from(body['data'] ?? []);
 
       if (!mounted) return;
       setState(() {
@@ -55,48 +81,46 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _selectPesan(String token) async {
-    final response = await http.get(
-      Uri.parse('${ApiClient.baseUrl}/pesan'),
-      headers: ApiClient.headers(token: token),
-    );
+  // ── Toggle favorit ─────────────────────────────────────────────────────────
+  Future<void> _toggleFavorit(int index) async {
+    final item = _messages[index];
+    // Optimistic update
+    setState(() {
+      _messages[index] = item.copyWith(isStarred: !item.isStarred);
+    });
 
-    final body = jsonDecode(response.body);
-    if (response.statusCode != 200 || body['success'] != true) {
-      throw Exception(body['message'] ?? 'Gagal mengambil pesan.');
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiClient.baseUrl}/pesan/${item.id}/favorit'),
+        headers: ApiClient.headers(token: _token),
+      );
+      final body = jsonDecode(response.body);
+      if (body['success'] != true) throw Exception();
+
+      // Jika sedang di tab Favorit dan di-unstar, hapus dari list
+      if (_selectedFilterIndex == 2 && body['favorited'] == false) {
+        setState(() => _messages.removeAt(index));
+      }
+    } catch (_) {
+      // Rollback jika gagal
+      if (!mounted) return;
+      setState(() {
+        _messages[index] = item;
+      });
     }
-
-    return List<Map<String, dynamic>>.from(body['data'] ?? []);
   }
 
-  List<_MessageItem> get _filteredMessages {
-    switch (_selectedFilterIndex) {
-      case 1:
-        return _messages.where((message) => message.isUnread).toList();
-      case 2:
-        return _messages.where((message) => message.isStarred).toList();
-      default:
-        return _messages;
-    }
-  }
-
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final messages = _filteredMessages;
-
     return Scaffold(
-      backgroundColor: const Color(0xffDCEFFE), // Warna background kustom
+      backgroundColor: const Color(0xffDCEFFE),
       body: SafeArea(
         child: Column(
           children: [
             const TopBarScreen(),
-
-            // --- FILTER TABS SECTION ---
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 20.0,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Row(
                 children: [
                   _buildFilterTab(0, 'Semua'),
@@ -107,16 +131,14 @@ class _MessageScreenState extends State<MessageScreen> {
                 ],
               ),
             ),
-
-            // --- LIST PESAN SECTION ---
-            Expanded(child: _buildMessageList(messages)),
+            Expanded(child: _buildMessageList()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMessageList(List<_MessageItem> messages) {
+  Widget _buildMessageList() {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xff093A9C)),
@@ -134,9 +156,7 @@ class _MessageScreenState extends State<MessageScreen> {
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
+                    color: Colors.black87, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -153,20 +173,24 @@ class _MessageScreenState extends State<MessageScreen> {
       );
     }
 
-    if (messages.isEmpty) {
+    if (_messages.isEmpty) {
+      final emptyText = switch (_selectedFilterIndex) {
+        1 => 'Tidak ada pesan belum dibaca.',
+        2 => 'Belum ada pesan favorit.',
+        _ => 'Belum ada informasi.',
+      };
+
       return RefreshIndicator(
         onRefresh: _fetchMessages,
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: const [
-            SizedBox(height: 160),
+          children: [
+            const SizedBox(height: 160),
             Center(
               child: Text(
-                'Belum ada informasi.',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
+                emptyText,
+                style: const TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -176,36 +200,26 @@ class _MessageScreenState extends State<MessageScreen> {
 
     return RefreshIndicator(
       onRefresh: _fetchMessages,
-      child: ListView(
+      child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          ...messages.map(
-            (message) => _buildMessageCard(
-              sender: message.sender,
-              time: message.time,
-              content: message.content,
-              isStarred: message.isStarred,
-              isUnread: message.isUnread,
-              hasLeftIndicator: message.hasLeftIndicator,
-            ),
-          ),
-          const SizedBox(
-            height: 100,
-          ), // Spacing agar tidak tertutup bottom navigation
-        ],
+        itemCount: _messages.length + 1,
+        itemBuilder: (context, i) {
+          if (i == _messages.length) return const SizedBox(height: 100);
+          final msg = _messages[i];
+          return _buildMessageCard(index: i, message: msg);
+        },
       ),
     );
   }
 
-  // Widget Builder untuk Tab Filter Atas
   Widget _buildFilterTab(int index, String label) {
-    bool isSelected = _selectedFilterIndex == index;
+    final isSelected = _selectedFilterIndex == index;
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _selectedFilterIndex = index;
-          });
+          if (_selectedFilterIndex == index) return;
+          setState(() => _selectedFilterIndex = index);
+          _fetchMessages();
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -220,7 +234,8 @@ class _MessageScreenState extends State<MessageScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
           ),
@@ -229,15 +244,7 @@ class _MessageScreenState extends State<MessageScreen> {
     );
   }
 
-  // Widget Builder untuk Card Pesan / Notifikasi
-  Widget _buildMessageCard({
-    required String sender,
-    required String time,
-    required String content,
-    required bool isStarred,
-    required bool isUnread,
-    bool hasLeftIndicator = false,
-  }) {
+  Widget _buildMessageCard({required int index, required _MessageItem message}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -246,8 +253,7 @@ class _MessageScreenState extends State<MessageScreen> {
       ),
       child: Stack(
         children: [
-          // Indikator Garis Samping Kiri (Spesifik untuk Supervisor di gambar)
-          if (hasLeftIndicator)
+          if (message.hasLeftIndicator)
             Positioned(
               left: 0,
               top: 15,
@@ -263,18 +269,16 @@ class _MessageScreenState extends State<MessageScreen> {
                 ),
               ),
             ),
-
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Baris Atas: Pengirim, Waktu, & Dot Merah
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      sender,
+                      message.sender,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -284,13 +288,12 @@ class _MessageScreenState extends State<MessageScreen> {
                     Row(
                       children: [
                         Text(
-                          time,
+                          message.time,
                           style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.blueGrey.shade300,
-                          ),
+                              fontSize: 11,
+                              color: Colors.blueGrey.shade300),
                         ),
-                        if (isUnread) ...[
+                        if (message.isUnread) ...[
                           const SizedBox(width: 6),
                           Container(
                             width: 10,
@@ -306,25 +309,26 @@ class _MessageScreenState extends State<MessageScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Baris Tengah: Isi Konten Pesan
                 Padding(
-                  padding: const EdgeInsets.only(right: 24.0),
+                  padding: const EdgeInsets.only(right: 24),
                   child: Text(
-                    content,
+                    message.content,
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      height: 1.3,
-                    ),
+                        fontSize: 14, color: Colors.black87, height: 1.3),
                   ),
                 ),
-                // Baris Bawah: Tombol Bintang (Favorit)
+                // ✅ Bintang bisa di-tap
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: Icon(
-                    isStarred ? Icons.star : Icons.star_border,
-                    color: isStarred ? Colors.yellow.shade700 : Colors.black54,
-                    size: 24,
+                  child: GestureDetector(
+                    onTap: () => _toggleFavorit(index),
+                    child: Icon(
+                      message.isStarred ? Icons.star : Icons.star_border,
+                      color: message.isStarred
+                          ? Colors.yellow.shade700
+                          : Colors.black54,
+                      size: 24,
+                    ),
                   ),
                 ),
               ],
@@ -336,8 +340,10 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 }
 
+// ── Model ──────────────────────────────────────────────────────────────────────
 class _MessageItem {
-  _MessageItem({
+  const _MessageItem({
+    required this.id,
     required this.sender,
     required this.time,
     required this.content,
@@ -346,6 +352,7 @@ class _MessageItem {
     this.hasLeftIndicator = false,
   });
 
+  final int id;
   final String sender;
   final String time;
   final String content;
@@ -353,84 +360,25 @@ class _MessageItem {
   final bool isUnread;
   final bool hasLeftIndicator;
 
-  factory _MessageItem.fromJson(Map<String, dynamic> json) {
-    final content = _firstStringValue(json, [
-      'content',
-      'pesan',
-      'message',
-      'isi',
-      'isi_informasi',
-      'konten',
-      'deskripsi',
-      'keterangan',
-      'judul',
-    ]);
+  _MessageItem copyWith({bool? isStarred}) => _MessageItem(
+        id: id,
+        sender: sender,
+        time: time,
+        content: content,
+        isStarred: isStarred ?? this.isStarred,
+        isUnread: isUnread,
+        hasLeftIndicator: hasLeftIndicator,
+      );
 
+  factory _MessageItem.fromJson(Map<String, dynamic> json) {
     return _MessageItem(
-      sender:
-          _firstStringValue(json, [
-            'pengirim',
-            'sender',
-            'created_by',
-            'role',
-          ]) ??
-          'Admin',
-      time: _formatDateTime(
-        _firstStringValue(json, ['time', 'created_at', 'tanggal', 'waktu']),
-      ),
-      content: content ?? '-',
-      isStarred:
-          json['isStarred'] == true ||
-          json['is_starred'] == true ||
-          json['favorit'] == true,
-      isUnread:
-          json['isUnread'] == true ||
-          json['is_read'] == false ||
-          json['dibaca'] == false ||
-          json['status'] == 'unread',
+      id: json['id'] as int? ?? 0,
+      sender: json['sender']?.toString() ?? 'Admin',
+      time: json['time']?.toString() ?? '-',
+      content: json['content']?.toString() ?? '-',
+      isStarred: json['isStarred'] == true,
+      isUnread: json['isUnread'] == true,
       hasLeftIndicator: json['hasLeftIndicator'] == true,
     );
-  }
-
-  static String? _firstStringValue(
-    Map<String, dynamic> json,
-    List<String> keys,
-  ) {
-    for (final key in keys) {
-      final value = json[key];
-      if (value != null && value.toString().trim().isNotEmpty) {
-        return value.toString();
-      }
-    }
-    return null;
-  }
-
-  static String _formatDateTime(String? raw) {
-    if (raw == null) return '-';
-
-    final date = DateTime.tryParse(raw);
-    if (date == null) return raw;
-
-    const monthNames = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-
-    final day = date.day.toString().padLeft(2, '0');
-    final month = monthNames[date.month - 1];
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-
-    return '$day $month ${date.year} | $hour.$minute';
   }
 }

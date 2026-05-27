@@ -78,11 +78,12 @@ class SosProvider extends ChangeNotifier {
   /// [role] diambil dari AuthProvider.user!.role ('petugas' / 'supervisor')
   /// BE memvalidasi jarak ≤ 50 m; jika gagal, pesan error BE diteruskan.
   Future<SosResult> konfirmasiSOS({
-    required String token,
-    required String role,
-    required int    sosId,
-    required double latitudePetugas,
-    required double longitudePetugas,
+  required String token,
+  required String role,
+  required int    sosId,
+  required double latitudePetugas,
+  required double longitudePetugas,
+  required String penanganan, 
   }) async {
     try {
       final updated = await _repo.konfirmasiSOS(
@@ -91,6 +92,7 @@ class SosProvider extends ChangeNotifier {
         sosId:             sosId,
         latitudePetugas:   latitudePetugas,
         longitudePetugas:  longitudePetugas,
+        penanganan:        penanganan, 
       );
 
       // Sinkron ke list agar RiwayatSosScreen langsung update

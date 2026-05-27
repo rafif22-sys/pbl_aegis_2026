@@ -39,7 +39,7 @@ class GuestCard extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 15, left: 12, right: 12),
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -93,28 +93,13 @@ class GuestCard extends StatelessWidget {
                 const SizedBox(height: 5),
 
                 // ── Waktu Masuk & Keluar + ID ──
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Masuk $waktuMasukStr  |  Keluar $waktuKeluarStr',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '#${tamu.id.toString().padLeft(3, '0')}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Masuk $waktuMasukStr  |  Keluar $waktuKeluarStr',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

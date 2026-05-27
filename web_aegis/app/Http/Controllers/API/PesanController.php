@@ -68,6 +68,51 @@ class PesanController extends Controller
         ];
     }
 
+    /**
+     * Toggle favorit sebuah pesan
+     * POST /api/pesan/{id}/favorit
+     */
+    public function toggleFavorit(Request $request, $id)
+    {
+        $userId      = $request->user()->id;
+        $favoriteIds = $this->favoriteIds($userId);
+
+        $id = (int) $id;
+        if (in_array($id, $favoriteIds, true)) {
+            $favoriteIds = array_values(array_filter($favoriteIds, fn($fid) => $fid !== $id));
+        } else {
+            $favoriteIds[] = $id;
+        }
+
+        Cache::put($this->favoriteKey($userId), $favoriteIds);
+
+        return response()->json(['success' => true, 'favorited' => in_array($id, $favoriteIds, true)]);
+    }
+
+    /**
+     * Tandai semua pesan sudah dibaca
+     * POST /api/pesan/mark-read
+     */
+    public function markRead(Request $request)
+    {
+        Cache::put($this->lastReadKey($request->user()->id), now());
+        return response()->json(['success' => true]);
+    }
+
+    public function unreadCount(Request $request)
+    {
+        $userId      = $request->user()->id;
+        $lastRead    = Cache::get($this->lastReadKey($userId));
+        $favoriteIds = $this->favoriteIds($userId);
+
+        $count = Informasi::latest('waktu_kirim')
+            ->get()
+            ->filter(fn($item) => $this->isUnread($item, $userId, $lastRead))
+            ->count();
+
+        return response()->json(['success' => true, 'count' => $count]);
+    }
+
     private function namaPengirim(Informasi $informasi): string
     {
         $role = strtolower((string) ($informasi->user->role ?? ''));

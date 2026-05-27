@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -7,14 +8,20 @@ import 'navigation_service.dart';
 import '../../features/sos/repositories/sos_repository.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/petugas/screens/detail_sos_screen.dart';
+import '../../features/petugas/screens/pesan_screen.dart';
 
 class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
   static final _localNotif = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
-  static const _channelId = 'sos_channel';
+  // Channel SOS
+  static const _channelId   = 'sos_channel';
   static const _channelName = 'SOS Alerts';
+
+  // Channel Informasi
+  static const _infoChannelId   = 'info_channel';
+  static const _infoChannelName = 'Informasi';
 
   static final _vibrationPattern =
       Int64List.fromList([0, 500, 200, 500, 200, 500]);
@@ -37,12 +44,20 @@ class NotificationService {
     await _localNotif.initialize(
       const InitializationSettings(android: android),
       onDidReceiveNotificationResponse: (details) {
-        final sosId = details.payload;
-        if (sosId != null) _navigateToDetail(sosId);
+        final payload = details.payload;
+        if (payload == null) return;
+
+        // Format payload: "sos:123" atau "info:456"
+        if (payload.startsWith('sos:')) {
+          _navigateToSosDetail(payload.replaceFirst('sos:', ''));
+        } else if (payload.startsWith('info:')) {
+          _navigateToInfo();
+        }
       },
     );
 
-    final channel = AndroidNotificationChannel(
+    // Channel SOS dengan suara sirine
+    final sosChannel = AndroidNotificationChannel(
       _channelId,
       _channelName,
       description: 'Notifikasi darurat patroli',
@@ -53,32 +68,54 @@ class NotificationService {
       vibrationPattern: _vibrationPattern,
     );
 
-    await _localNotif
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    // Channel Informasi dengan suara default
+    const infoChannel = AndroidNotificationChannel(
+      _infoChannelId,
+      _infoChannelName,
+      description: 'Notifikasi informasi dari supervisor/admin',
+      importance: Importance.high,
+    );
 
-    // Handle tap saat app di background (via FCM langsung)
+    final plugin = _localNotif
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await plugin?.createNotificationChannel(sosChannel);
+    await plugin?.createNotificationChannel(infoChannel);
+
+    // Handle tap saat app background via FCM langsung
     FirebaseMessaging.onMessageOpenedApp.listen((msg) {
-      final sosId = msg.data['sos_id'];
-      if (sosId != null) _navigateToDetail(sosId);
+      final type = msg.data['type'] ?? '';
+      if (type == 'sos_baru') {
+        final sosId = msg.data['sos_id'];
+        if (sosId != null) _navigateToSosDetail(sosId);
+      } else if (type == 'informasi_baru') {
+        _navigateToInfo();
+      }
     });
 
     FirebaseMessaging.onMessage.listen(showLocalNotification);
   }
 
-  /// Dipanggil dari AuthWrapper setelah app & navigator sudah siap
-  static Future<void> handleInitialMessage() async {
-    final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial == null) return;
-
-    final sosId = initial.data['sos_id'];
-    if (sosId != null) {
-      await _navigateToDetail(sosId);
+  static Future<String?> getInitialPayload() async {
+    final launchDetails = await _localNotif.getNotificationAppLaunchDetails();
+    if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
+      return launchDetails.notificationResponse?.payload;
     }
+
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      final type = initial.data['type'] ?? '';
+      if (type == 'sos_baru') {
+        return 'sos:${initial.data['sos_id']}';
+      } else if (type == 'informasi_baru') {
+        return 'info:${initial.data['informasi_id']}';
+      }
+    }
+    return null;
   }
 
-  static Future<void> _navigateToDetail(String sosId) async {
+  static Future<void> _navigateToSosDetail(String sosId) async {
     final context = NavigationService.navigatorKey.currentContext;
     if (context == null) return;
 
@@ -102,39 +139,64 @@ class NotificationService {
     }
   }
 
+  static final StreamController<int> tabStream = StreamController<int>.broadcast();
+
+  static void _navigateToInfo() {
+    final context = NavigationService.navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+    tabStream.add(3);
+  }
+
   static Future<String?> getToken() async {
     return await _messaging.getToken();
   }
 
   static Future<void> showLocalNotification(RemoteMessage msg) async {
-    final notif = msg.notification;
-    if (notif == null) return;
+    final title = msg.notification?.title ?? msg.data['title'];
+    final body = msg.notification?.body ?? msg.data['body'];
+    
+    if (title == null && body == null) return;
 
-    final sosId = msg.data['sos_id'];
-    final notifId = sosId != null
-        ? int.tryParse(sosId) ?? notif.hashCode
-        : notif.hashCode;
+    if (!_initialized) {
+      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      await _localNotif.initialize(const InitializationSettings(android: android));
+      _initialized = true;
+    }
+
+    final type   = msg.data['type'] ?? '';
+    final isInfo = type == 'informasi_baru';
+
+    final channelId   = isInfo ? _infoChannelId : _channelId;
+    final channelName = isInfo ? _infoChannelName : _channelName;
+
+    final id      = isInfo ? msg.data['informasi_id'] : msg.data['sos_id'];
+    final notifId = id != null ? int.tryParse(id) ?? title.hashCode : title.hashCode;
+    final payload = isInfo ? 'info:$id' : 'sos:$id';
 
     await _localNotif.show(
       notifId,
-      notif.title,
-      notif.body,
+      title,
+      body,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          importance: Importance.max,
-          priority: Priority.high,
+          channelId,
+          channelName,
+          importance: isInfo ? Importance.high : Importance.max,
+          priority: isInfo ? Priority.defaultPriority : Priority.high,
           icon: 'ic_notif_color',
-          color: const Color(0xFF041221),
-          sound: const RawResourceAndroidNotificationSound('sirine'),
+          color: const Color(0xFF142940),
+          sound: isInfo
+              ? null
+              : const RawResourceAndroidNotificationSound('sirine'),
           playSound: true,
           enableVibration: true,
-          vibrationPattern: _vibrationPattern,
-          fullScreenIntent: true,
+          vibrationPattern: isInfo ? null : _vibrationPattern,
+          fullScreenIntent: !isInfo,
         ),
       ),
-      payload: sosId,
+      payload: payload,
     );
   }
 }

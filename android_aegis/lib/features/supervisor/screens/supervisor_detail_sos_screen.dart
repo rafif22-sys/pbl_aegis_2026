@@ -64,8 +64,92 @@ class _SupervisorDetailSosScreenState extends State<SupervisorDetailSosScreen>
     super.dispose();
   }
 
-  // --- LOGIKA VALIDASI RADIUS 30 METER VIA SUPABASE ---
+  
+  Future<String?> _showFormPenanganan() async {
+    String inputText = '';
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'Deskripsi Penanganan',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tuliskan penanganan yang sudah dilakukan:',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  maxLines: 4,
+                  maxLength: 1000,
+                  onChanged: (val) => inputText = val.trim(),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Sudah memanggil pemadam kebakaran...',
+                    hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF1A3FA0)),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A3FA0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  if (inputText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Penanganan tidak boleh kosong.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx, inputText);
+                },
+                child: const Text(
+                  'Konfirmasi',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    return result;
+  }
+
   Future<void> _handleKonfirmasi() async {
+    // Tampilkan form penanganan dulu
+    final penanganan = await _showFormPenanganan();
+    if (penanganan == null || !mounted) return;
+
     setState(() => _isKonfirmasi = true);
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -84,21 +168,19 @@ class _SupervisorDetailSosScreenState extends State<SupervisorDetailSosScreen>
         return;
       }
 
-      // Mengambil titik koordinat Supervisor saat ini
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
       if (!mounted) return;
 
       final auth = context.read<AuthProvider>();
-      
-      // Mengirimkan data ke Supabase. Pengecekan radius 30 meter terjadi di sini!
       final result = await context.read<SosProvider>().konfirmasiSOS(
         token:            auth.token!,
         role:             auth.user!.role,
         sosId:            _sos.id,
         latitudePetugas:  position.latitude,
         longitudePetugas: position.longitude,
+        penanganan:       penanganan, // ✅
       );
 
       if (!mounted) return;
@@ -106,7 +188,6 @@ class _SupervisorDetailSosScreenState extends State<SupervisorDetailSosScreen>
         setState(() => _sos = result.data!);
         _showSnack('SOS berhasil dikonfirmasi oleh Supervisor!');
       } else {
-        // Jika jarak > 30 meter, notifikasi error dari server akan muncul di sini
         _showSnack(result.message, isError: true);
       }
     } catch (e) {
@@ -163,7 +244,7 @@ class _SupervisorDetailSosScreenState extends State<SupervisorDetailSosScreen>
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    'PESAN SOS SUPERVISOR',
+                    'PESAN SOS',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

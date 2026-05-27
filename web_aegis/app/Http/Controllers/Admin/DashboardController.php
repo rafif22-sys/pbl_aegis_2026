@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Services\FcmService;
 
 
 class DashboardController extends Controller
@@ -84,11 +85,21 @@ class DashboardController extends Controller
             'pesan' => ['required', 'string', 'max:1000'],
         ]);
 
-        Informasi::create([
+        $informasi = Informasi::create([
             'id_user'     => Auth::id(),
             'pesan'       => $request->pesan,
             'waktu_kirim' => now(),
         ]);
+
+        // Load relasi user untuk FcmService
+        $informasi->load('user');
+
+        // Trigger notifikasi FCM
+        try {
+            app(FcmService::class)->sendInformasiNotification($informasi);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('FCM informasi gagal: ' . $e->getMessage());
+        }
 
         cache()->forever('informasi_last_read_' . Auth::id(), now());
 
