@@ -91,10 +91,24 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
       // Filter tanggal
       if (!_showAllDates) {
         final masuk = tamu.waktuMasuk.toLocal();
-        final match = masuk.year == _selectedDate.year &&
-            masuk.month == _selectedDate.month &&
-            masuk.day == _selectedDate.day;
-        if (!match) return false;
+        
+        // Tentukan tanggal akhir: waktuKeluar jika ada, jika tidak gunakan masuk
+        final keluar = tamu.waktuKeluar?.toLocal() ?? masuk;
+
+        // Normalisasi ke awal hari (00:00:00) agar perbandingan akurat
+        final hariMasuk = DateTime(masuk.year, masuk.month, masuk.day);
+        final hariKeluar = DateTime(keluar.year, keluar.month, keluar.day);
+        final hariDipilih = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+        );
+
+        // Tamu muncul jika tanggal dipilih berada dalam rentang masuk–keluar
+        final dalamRentang = !hariDipilih.isBefore(hariMasuk) &&
+            !hariDipilih.isAfter(hariKeluar);
+
+        if (!dalamRentang) return false;
       }
 
       // Filter nama

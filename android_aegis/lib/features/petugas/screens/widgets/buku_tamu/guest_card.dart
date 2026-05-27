@@ -19,13 +19,17 @@ class GuestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final masuk = tamu.waktuMasuk.toLocal();
     final isKeluar = tamu.status == 'keluar';
+    final today = DateTime.now();
 
-    // Waktu masuk: tampilkan tanggal singkat jika mode semua hari
-    String waktuMasukStr = showAllDates
+    final masukBedaHari = masuk.year != today.year ||
+        masuk.month != today.month ||
+        masuk.day != today.day;
+
+    String waktuMasukStr = (showAllDates || masukBedaHari)
         ? '${formatDateShort(masuk)} ${formatTime(masuk)}'
         : formatTime(masuk);
 
-    // Waktu keluar: tampilkan aktual atau estimasi jika ada
+    // Waktu keluar
     String waktuKeluarStr = '--:--';
     if (tamu.waktuKeluar != null) {
       final keluar = tamu.waktuKeluar!.toLocal();
