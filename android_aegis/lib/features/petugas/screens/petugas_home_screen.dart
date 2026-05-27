@@ -7,6 +7,7 @@ import 'jadwal_screen.dart';
 import 'buku_tamu_screen.dart';
 import '../../sos/providers/sos_provider.dart';
 import 'pesan_screen.dart';
+import '../providers/pesan_provider.dart';
 import '../../../core/services/notification_service.dart';
 import 'dart:async';
 
@@ -25,9 +26,9 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
 
   final List<Widget> _pages = [
     const SizedBox(),
-    const SizedBox(),
+    const JadwalScreen(),
     const RiwayatSosScreen(),
-    const SizedBox(),
+    const MessageScreen(),
     const SizedBox(),
   ];
 
@@ -60,6 +61,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       final token = context.read<AuthProvider>().token;
       if (token != null) {
         context.read<SosProvider>().fetchListSOS(token: token);
+        context.read<PesanProvider>().fetchUnreadCount(token: token);
       }
     });
 
@@ -442,9 +444,18 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
   }) {
     final bool isSelected = _selectedIndex == index;
     final bool hasMenungguBantuan = label == 'Riwayat' && context.watch<SosProvider>().totalMenunggu > 0;
+    final bool hasUnreadPesan = label == 'Informasi' && context.watch<PesanProvider>().unreadCount > 0;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () {
+        if (_selectedIndex == 3 && index != 3) {
+          final token = context.read<AuthProvider>().token;
+          if (token != null && context.read<PesanProvider>().unreadCount > 0) {
+            context.read<PesanProvider>().markAllRead(token: token);
+          }
+        }
+        setState(() => _selectedIndex = index);
+      },
       child: Container(
         color: Colors.transparent,
         child: Column(
@@ -464,7 +475,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                     size: 24,
                     color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade400,
                   ),
-                  if (hasMenungguBantuan)
+                  if (hasMenungguBantuan || hasUnreadPesan)
                     Positioned(
                       top: -2,
                       right: -2,

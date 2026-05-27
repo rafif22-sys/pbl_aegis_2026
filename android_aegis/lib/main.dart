@@ -6,6 +6,7 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
 import 'features/sos/widgets/sos_loading_screen.dart';  
+import 'features/petugas/providers/pesan_provider.dart';
 
 import 'core/routes/app_routes.dart';
 import 'core/services/navigation_service.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => SosProvider()),
         ChangeNotifierProvider(create: (_) => TamuProvider()),
+        ChangeNotifierProvider(create: (_) => PesanProvider()),
       ],
       child: MaterialApp(
         title: 'AEGIS',

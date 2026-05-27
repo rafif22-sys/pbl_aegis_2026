@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/services/api_client.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../providers/pesan_provider.dart';
 import 'widgets/buku_tamu/top_bar_screen.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -26,7 +27,6 @@ class _MessageScreenState extends State<MessageScreen> {
   @override
   void initState() {
     super.initState();
-    _markRead(); // tandai sudah dibaca saat halaman dibuka
     _fetchMessages();
   }
 
@@ -79,6 +79,15 @@ class _MessageScreenState extends State<MessageScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // ── Pull to refresh ────────────────────────────────────────────────────────
+  Future<void> _onRefresh() async {
+    await _markRead();
+    if (mounted) {
+      context.read<PesanProvider>().clearUnreadCount();
+    }
+    await _fetchMessages();
   }
 
   // ── Toggle favorit ─────────────────────────────────────────────────────────
@@ -181,7 +190,7 @@ class _MessageScreenState extends State<MessageScreen> {
       };
 
       return RefreshIndicator(
-        onRefresh: _fetchMessages,
+        onRefresh: _onRefresh,
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
@@ -199,7 +208,7 @@ class _MessageScreenState extends State<MessageScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchMessages,
+      onRefresh: _onRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _messages.length + 1,
