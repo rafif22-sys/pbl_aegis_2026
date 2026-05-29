@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'; // ← tambahkan ini
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'features/auth/providers/auth_provider.dart';
@@ -7,6 +7,7 @@ import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
 
 import 'core/routes/app_routes.dart';
+import 'core/services/supabase_service.dart';
 
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
@@ -15,6 +16,7 @@ import 'features/warga/screens/warga_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseService.initialize();
   runApp(const MyApp());
 }
 
@@ -85,23 +87,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        if (!auth.isLoggedIn) return const LoginScreen();
+    final auth = context.watch<AuthProvider>();
+    if (!auth.isLoggedIn) return const LoginScreen();
 
-        switch (auth.user!.role) {
-          case 'petugas':
-            return const PetugasHomeScreen();
+    switch (auth.user!.role) {
+      case 'petugas':
+        return const PetugasHomeScreen();
 
-          case 'supervisor':
-            return const SupervisorHomePage();
-          case 'warga':
-            return const WargaHomeScreen();
+      case 'supervisor':
+        return const SupervisorHomePage();
+      case 'warga':
+        return const WargaHomeScreen();
 
-          default:
-            return const LoginScreen();
-        }
-      },
-    );
+      default:
+        return const LoginScreen();
+    }
   }
 }

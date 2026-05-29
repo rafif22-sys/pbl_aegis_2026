@@ -1,28 +1,49 @@
+const String _supabaseStorageUrl =
+    'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/aegis/';
+
+String? _buildFotoUrl(String? raw) {
+  if (raw == null) return null;
+  if (raw.startsWith('http')) return raw;
+  return '$_supabaseStorageUrl$raw';
+}
+
 class BukuTamuModel {
   final int id;
+  final int? idUser;
   final String nama;
-  final String jamMasuk;
-  final String? jamKeluar;
+  final String? alamat;
+  final String? keperluan;
+  final String? fotoTamu;
+  final String waktuMasuk;
+  final String? waktuKeluar;
   final String status;
-  final int noAntrian;
+  final String namaUser;
 
   BukuTamuModel({
     required this.id,
+    this.idUser,
     required this.nama,
-    required this.jamMasuk,
-    this.jamKeluar,
+    this.alamat,
+    this.keperluan,
+    this.fotoTamu,
+    required this.waktuMasuk,
+    this.waktuKeluar,
     required this.status,
-    required this.noAntrian,
+    this.namaUser = '-',
   });
 
   factory BukuTamuModel.fromJson(Map<String, dynamic> json) {
     return BukuTamuModel(
       id: json['id'],
-      nama: json['nama'],
-      jamMasuk: json['jam_masuk'],
-      jamKeluar: json['jam_keluar'],
-      status: json['status'],
-      noAntrian: json['no_antrian'],
+      idUser: json['id_user'],
+      nama: json['nama'] ?? '',
+      alamat: json['alamat'],
+      keperluan: json['keperluan'],
+      fotoTamu: _buildFotoUrl(json['foto_tamu'] as String?),
+      waktuMasuk: json['waktu_masuk'] ?? '',
+      waktuKeluar: json['waktu_keluar'],
+      status: json['status'] ?? '',
+      namaUser: json['user']?['nama'] as String? ?? '-',
     );
   }
 }

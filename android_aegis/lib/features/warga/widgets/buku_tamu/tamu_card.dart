@@ -34,7 +34,7 @@ class TamuCard extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                '${tamu.noAntrian}',
+                '#${tamu.id}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -61,15 +61,15 @@ class TamuCard extends StatelessWidget {
                     const Icon(Icons.login, size: 14, color: Colors.black45),
                     const SizedBox(width: 4),
                     Text(
-                      tamu.jamMasuk,
+                      tamu.waktuMasuk,
                       style: const TextStyle(fontSize: 12, color: Colors.black54),
                     ),
-                    if (tamu.jamKeluar != null) ...[
+                    if (tamu.waktuKeluar != null) ...[
                       const SizedBox(width: 8),
                       const Icon(Icons.logout, size: 14, color: Colors.black45),
                       const SizedBox(width: 4),
                       Text(
-                        tamu.jamKeluar!,
+                        tamu.waktuKeluar!,
                         style: const TextStyle(fontSize: 12, color: Colors.black54),
                       ),
                     ],

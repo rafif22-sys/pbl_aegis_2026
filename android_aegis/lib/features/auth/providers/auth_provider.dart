@@ -88,10 +88,10 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Logout normal (tombol logout di app) ───────────────
   Future<void> logout() async {
-    // Kirim request logout ke server (best-effort, boleh gagal)
-    if (_token != null) await AuthService.logout(_token!);
+    final token = _token;
     _clearState();
     notifyListeners();
+    if (token != null) await AuthService.logout(token);
   }
 
   // ── Paksa logout karena server balas 401 ───────────────
