@@ -56,14 +56,15 @@ const STATUS_STYLE = {
     hadir:     { bg: '#f0fdf4', border: '#86efac', text: '#166534' },
     terlambat: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e' },
     alpha:     { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b' },
-    menunggu:  { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b' }, // ← ganti belum_absen
+    menunggu:  { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b' },
+    libur:     { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' }, 
 };
 
 // StatusBadge — ganti fallback
 function StatusBadge({ status }) {
     const s = STATUS_STYLE[status] ?? STATUS_STYLE.menunggu; // ← ganti belum_absen
     return (
-        <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border"
+        <span className="inline-block text-[9px] font-medium px-1.5 py-0 rounded-full border"
             style={{ background: s.bg, borderColor: s.border, color: s.text }}>
             {(status ?? 'menunggu').replace('_', ' ')} {/* ← ganti belum_absen */}
         </span>
@@ -88,17 +89,28 @@ function Flash() {
 // ─── Jadwal Card ──────────────────────────────────────────────────────────────
 
 function JadwalCard({ absensi, shiftNama, onClick }) {
-    const c = SHIFT_COLOR[shiftKey(shiftNama)];
+    const isLibur = absensi.status === 'libur';
+    
+    // Gunakan warna abu jika libur, warna shift jika aktif
+    const c = isLibur
+        ? { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b', sub: '#94a3b8' }
+        : SHIFT_COLOR[shiftKey(shiftNama)];
+
     return (
         <div onClick={onClick}
             className="rounded-lg border px-2 py-1.5 mb-1 cursor-pointer transition-all hover:shadow-sm hover:scale-[1.01]"
             style={{ background: c.bg, borderColor: c.border }}>
-            <p className="text-[11px] font-semibold truncate" style={{ color: c.text }}>
-                {absensi.user?.nama ?? '—'}
-            </p>
-            <p className="text-[10px] truncate" style={{ color: c.sub }}>
-                {absensi.rute?.nama ?? '—'}
-            </p>
+            <div className="mb-0.5">
+                <p className="text-[11px] font-semibold truncate" style={{ color: c.text }}>
+                    {absensi.user?.nama ?? '—'}
+                </p>
+            </div>
+            <div className="flex items-center justify-between gap-1">
+                <p className="text-[10px] truncate" style={{ color: c.sub }}>
+                    {isLibur ? '— libur —' : (absensi.rute?.nama ?? '—')}
+                </p>
+                <StatusBadge status={absensi.status} />
+            </div>
         </div>
     );
 }
@@ -786,7 +798,7 @@ export default function JadwalAbsensi({
 
                                                     {matchJadwals.flatMap(j =>
                                                         j.absensi
-                                                            .filter(ab => ab.status !== 'libur')  // ← tambah ini
+                                                            .filter(ab => ab.status !== 'libur') 
                                                             .map(ab => (
                                                                 <JadwalCard key={ab.id}
                                                                     absensi={ab}
@@ -817,6 +829,60 @@ export default function JadwalAbsensi({
                                         })}
                                     </div>
                                 ))}
+                                {/* ── Baris Libur ── */}
+                                <div className="grid"
+                                    style={{ gridTemplateColumns: '110px repeat(7, 1fr)' }}>
+
+                                    {/* Label */}
+                                    <div className="px-3 py-3 flex flex-col gap-0.5 border-r border-t"
+                                        style={{ background: '#f8fafc', borderColor: '#c7e8f8' }}>
+                                        <span className="text-xs font-bold" style={{ color: '#475569' }}>
+                                            🏖️ Libur
+                                        </span>
+                                        <span className="text-[10px]" style={{ color: '#94a3b8' }}>
+                                            hari ini
+                                        </span>
+                                    </div>
+
+                                    {/* Sel per hari */}
+                                    {weekDates.map((d, di) => {
+                                        const dateStr   = toDateStr(d);
+                                        const today     = isToday(dateStr);
+
+                                        // Kumpulkan semua petugas libur di hari ini lintas semua shift
+                                        const liburList = jadwals
+                                            .filter(j => j.tanggal === dateStr)
+                                            .flatMap(j => j.absensi.filter(ab => ab.status === 'libur'));
+
+                                        return (
+                                            <div key={di}
+                                                className="border-l border-t min-h-[60px] p-2"
+                                                style={{
+                                                    borderColor : '#e0f2fe',
+                                                    background  : today ? '#f0f9ff' : 'white',
+                                                }}>
+                                                {liburList.length === 0 ? (
+                                                    <p className="text-[10px] text-center mt-2"
+                                                        style={{ color: '#cbd5e1' }}>
+                                                        —
+                                                    </p>
+                                                ) : (
+                                                    liburList.map(ab => (
+                                                        <div key={ab.id}
+                                                            className="rounded-lg border px-2 py-1 mb-1 text-[11px] font-semibold truncate"
+                                                            style={{
+                                                                background  : '#f1f5f9',
+                                                                borderColor : '#94a3b8',
+                                                                color       : '#475569',
+                                                            }}>
+                                                            🏖️ {ab.user?.nama ?? '—'}
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>

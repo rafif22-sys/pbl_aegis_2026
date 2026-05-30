@@ -4,11 +4,19 @@ class ApiClient {
   // Device fisik      → 'http://172.20.10.2:8000/api'
   static const String baseUrl = 'http://192.168.1.4:8000/api';
 
+  /// Untuk request JSON biasa (GET, POST dengan body JSON)
   static Map<String, String> headers({String? token}) {
     return {
       'Content-Type': 'application/json',
       'Accept':       'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  static Map<String, String> headersMultipart({required String token}) {
+    return {
+      'Accept':        'application/json',
+      'Authorization': 'Bearer $token',
     };
   }
 }

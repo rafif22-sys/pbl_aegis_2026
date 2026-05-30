@@ -219,18 +219,22 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadTamu,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
+              child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  _buildDatePicker(),
-                  const SizedBox(height: 15),
-                  _buildSearchAndFilter(),
-                  const SizedBox(height: 20),
-                  _buildContent(),
-                ],
+                padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
+
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    _buildDatePicker(),
+                    const SizedBox(height: 15),
+                    _buildSearchAndFilter(),
+                    const SizedBox(height: 20),
+                    _buildContent(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -304,17 +308,22 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     }
 
     final filtered = _filteredTamus;
+
     if (filtered.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 60),
         child: Center(
           child: Column(
             children: [
-              const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+              const Icon(Icons.people_outline,
+                  size: 64, color: Colors.grey),
               const SizedBox(height: 12),
               Text(
                 _emptyMessage,
-                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -324,31 +333,45 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     }
 
     return Container(
+      height: MediaQuery.of(context).size.height * 0.60,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      clipBehavior: Clip.hardEdge, // supaya card pojok ikut rounded
+      clipBehavior: Clip.hardEdge,
       child: Column(
         children: [
-          const SizedBox(height: 12),
-          ...filtered
-              .map((tamu) => GuestCard(
+
+          Expanded(
+            child: Scrollbar(
+              radius: const Radius.circular(10),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final tamu = filtered[index];
+
+                  return GuestCard(
                     tamu: tamu,
                     showAllDates: _showAllDates,
                     onTap: () => _openDetailDialog(tamu),
-                  ))
-              .toList(),
+                  );
+                },
+              ),
+            ),
+          ),
         ],
       ),
-          );
+    );
   }
 
   String get _emptyMessage {

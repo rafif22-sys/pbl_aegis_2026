@@ -10,6 +10,7 @@ import 'pesan_screen.dart';
 import '../providers/pesan_provider.dart';
 import '../../../core/services/notification_service.dart';
 import 'dart:async';
+import 'absensi_screen.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -346,9 +347,10 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         Expanded(
           child: GestureDetector(
             onTap: () {
-              // Navigator.push(context,
-              //   MaterialPageRoute(builder: (_) => const AbsensiPage()));
-              setState(() => _selectedIndex = 1);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AbsensiScreen()),
+              );
             },
             child: _buildMenuCard(icon: Icons.fact_check_outlined, title: 'Absen'),
           ),

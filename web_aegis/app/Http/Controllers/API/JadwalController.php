@@ -80,11 +80,22 @@ class JadwalController extends Controller
         ]);
 
         $userId = Auth::id();
+        $today  = Carbon::today()->toDateString();
 
         $query = JadwalAbsensi::with([
             'jadwal.posJaga',
             'jadwal.shift',
-        ])->where('id_user', $userId);
+        ])
+            ->where('id_user', $userId)
+            ->whereHas('jadwal', fn($q) =>
+                $q->whereDate('tanggal', '<=', $today)
+            )
+            ->where(function ($q) use ($today) {
+                $q->where('status', '!=', 'menunggu')
+                ->orWhereHas('jadwal', fn($q2) =>
+                    $q2->whereDate('tanggal', $today)
+                );
+            });
 
         if ($request->filled('tanggal')) {
             $query->whereHas('jadwal', fn($q) =>
@@ -110,10 +121,10 @@ class JadwalController extends Controller
                 'tanggal'           => $tanggal->toDateString(),
                 'hari'              => $tanggal->locale('id')->translatedFormat('l'),
                 'pos_jaga'          => $jadwal->posJaga?->nama ?? '-',
-                'jam_mulai'         => $shift?->jam_mulai             // ← format H:i
+                'jam_mulai'         => $shift?->jam_mulai
                     ? Carbon::parse($shift->jam_mulai)->format('H:i')
                     : '-',
-                'jam_selesai'       => $shift?->jam_selesai           // ← format H:i
+                'jam_selesai'       => $shift?->jam_selesai
                     ? Carbon::parse($shift->jam_selesai)->format('H:i')
                     : '-',
                 'nama_shift'        => $shift?->nama_shift ?? '-',

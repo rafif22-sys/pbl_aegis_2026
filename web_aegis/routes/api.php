@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AbsensiController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ForgotPasswordController;
 use App\Http\Controllers\API\JadwalController;
@@ -30,10 +31,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
         Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
         Route::prefix('jadwal')->name('jadwal.')->group(function () {
-        Route::get('/mingguan', [JadwalController::class, 'mingguan'])->name('mingguan');
-        Route::get('/absensi', [JadwalController::class, 'riwayatAbsensi'])->name('absensi.index');
-        // Route::get('/absensi/{id}', [JadwalController::class, 'showAbsensi'])->name('absensi.show');
-    });
+            Route::get('/mingguan', [JadwalController::class, 'mingguan'])->name('mingguan');
+            Route::get('/absensi', [JadwalController::class, 'riwayatAbsensi'])->name('absensi.index');
+        });
+
+        Route::prefix('absensi')->group(function () {
+            Route::get('hari-ini', [AbsensiController::class, 'hariIni']);
+            Route::post('masuk',   [AbsensiController::class, 'absenMasuk']);
+            Route::post('pulang',  [AbsensiController::class, 'absenPulang']);
+        });
     });
 
     // ── Buku Tamu Routes ────────────────────────────────
