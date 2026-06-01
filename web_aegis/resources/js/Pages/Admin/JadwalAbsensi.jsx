@@ -10,6 +10,7 @@ import { StatCard } from '@/Components/Admin/StatCard';
 const DAYS   = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
 
+
 // ─── Utilitas ─────────────────────────────────────────────────────────────────
 
 function getWeekDates(startOfWeek) {
@@ -388,6 +389,113 @@ function ModalDetail({ open, onClose, jadwal, absensi, petugas, rutes }) {
     );
 }
 
+
+function ModalAutoGenerate({ open, onClose, weekOffset, startOfWeek, endOfWeek }) {
+    const [processing, setProcessing] = useState(false);
+
+    if (!open) return null;
+
+    const handleGenerate = () => {
+        if (!confirm(`Generate jadwal otomatis untuk minggu\n${formatWeekRange(startOfWeek, endOfWeek)}?\n\nJadwal yang sudah ada tidak akan ditimpa.`)) return;
+
+        setProcessing(true);
+        router.post(route('admin.jadwal.auto-generate'),
+            { week_offset: weekOffset },
+            {
+                onSuccess: () => { setProcessing(false); onClose(); },
+                onError:   () => { setProcessing(false); },
+            }
+        );
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b"
+                    style={{ borderColor: '#e0f2fe' }}>
+                    <div>
+                        <h2 className="text-base font-bold" style={{ color: '#0F2A44' }}>
+                            Generate Jadwal Otomatis
+                        </h2>
+                        <p className="text-[11px] mt-0.5" style={{ color: '#94a3b8' }}>
+                            Buat jadwal minggu ini secara otomatis
+                        </p>
+                    </div>
+                    <button onClick={onClose}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                        style={{ color: '#94a3b8' }}>✕</button>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+
+                    {/* Info periode */}
+                    <div className="rounded-xl px-4 py-3 border"
+                        style={{ background: '#f0f9ff', borderColor: '#c7e8f8' }}>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#0F2A44' }}>
+                            Periode Minggu Ini
+                        </p>
+                        <p className="text-sm font-bold" style={{ color: '#005EA4' }}>
+                            {formatWeekRange(startOfWeek, endOfWeek)}
+                        </p>
+                    </div>
+
+                    {/* Aturan */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-semibold" style={{ color: '#0F2A44' }}>
+                            Aturan penjadwalan:
+                        </p>
+                        {[
+                            '🔄 Rotasi libur otomatis — 1 petugas libur per hari per pos',
+                            '👥 Setiap shift diisi minimal 2 petugas',
+                            '📍 Petugas dibagi merata ke masing-masing pos jaga',
+                            '✅ Jadwal yang sudah ada tidak akan ditimpa',
+                        ].map(item => (
+                            <div key={item} className="flex items-start gap-2 text-xs"
+                                style={{ color: '#64748b' }}>
+                                <span>{item}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Warning */}
+                    <div className="rounded-xl px-4 py-3 border text-xs"
+                        style={{ background: '#fffbeb', borderColor: '#fcd34d', color: '#92400e' }}>
+                        ⚠️ Pastikan data petugas, shift, rute, dan pos jaga sudah lengkap sebelum generate.
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t flex justify-end gap-2"
+                    style={{ borderColor: '#e0f2fe' }}>
+                    <button onClick={onClose}
+                        className="px-4 py-2 text-sm rounded-xl border hover:bg-gray-50"
+                        style={{ borderColor: '#c7e8f8', color: '#64748b' }}>
+                        Batal
+                    </button>
+                    <button onClick={handleGenerate} disabled={processing}
+                        className="px-5 py-2 text-sm rounded-xl font-semibold hover:opacity-90 disabled:opacity-60 flex items-center gap-2"
+                        style={{ background: '#005EA4', color: 'white' }}>
+                        {processing ? (
+                            <>
+                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                Generating...
+                            </>
+                        ) : (
+                            '🗓️ Generate Sekarang'
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Halaman Utama ────────────────────────────────────────────────────────────
 
 export default function JadwalAbsensi({
@@ -403,6 +511,7 @@ export default function JadwalAbsensi({
     const [showDetail,     setShowDetail]     = useState(false);
     const [detailJadwal,   setDetailJadwal]   = useState(null);
     const [detailAbsensi,  setDetailAbsensi]  = useState(null);
+    const [showAutoGenerate, setShowAutoGenerate] = useState(false);
 
     const weekDates = useMemo(() => getWeekDates(startOfWeek), [startOfWeek]);
 
@@ -469,8 +578,11 @@ export default function JadwalAbsensi({
             sub: 'jalur berbeda',
             blue: true,
             icon: (
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
-                    <path d="M3 12h18M3 6l9-3 9 3M3 18l9 3 9-3"/>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <circle cx="5"  cy="6"  r="2" />
+                    <circle cx="19" cy="6"  r="2" />
+                    <circle cx="12" cy="18" r="2" />
+                    <path d="M7 6h10M19 8l-7 8M5 8l7 8" />
                 </svg>
             ),
             accent: '#34d399',
@@ -493,7 +605,7 @@ export default function JadwalAbsensi({
     return (
         <>
             <Head title="Jadwal Absensi" />
-            <AdminLayout activeMenu="Jadwal Absensi" title="Jadwal Absensi">
+            <AdminLayout activeMenu="Manajemen Jadwal" title="Jadwal Absensi">
                 <div className="flex flex-col gap-3 flex-1 min-h-0">
                     <Flash />
 
@@ -559,9 +671,16 @@ export default function JadwalAbsensi({
                                 </button>
                             </div>
 
+                            {/* Tombol Generate Otomatis — taruh sebelum tombol Tambah Jadwal */}
+                            <button onClick={() => setShowAutoGenerate(true)}
+                                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold hover:opacity-90 shrink-0"
+                                style={{ background: '#059669', color: 'white' }}>
+                                🗓️ Generate Otomatis
+                            </button>
+
                             {/* Tombol tambah — sama dengan ManajemenUser */}
                             <button onClick={() => { setDefaultTanggal(''); setDefaultShiftId(''); setShowTambah(true); }}
-                                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white hover:opacity-90 shrink-0"
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white hover:opacity-90 shrink-0"
                                 style={{ background: '#005EA4' }}>
                                 + Tambah Jadwal
                             </button>
@@ -666,16 +785,18 @@ export default function JadwalAbsensi({
                                                     onMouseLeave={e => e.currentTarget.style.background = today ? '#f0f9ff' : 'white'}>
 
                                                     {matchJadwals.flatMap(j =>
-                                                        j.absensi.map(ab => (
-                                                            <JadwalCard key={ab.id}
-                                                                absensi={ab}
-                                                                shiftNama={shift.nama}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    openDetail(j, ab);
-                                                                }}
-                                                            />
-                                                        ))
+                                                        j.absensi
+                                                            .filter(ab => ab.status !== 'libur')  // ← tambah ini
+                                                            .map(ab => (
+                                                                <JadwalCard key={ab.id}
+                                                                    absensi={ab}
+                                                                    shiftNama={shift.nama}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openDetail(j, ab);
+                                                                    }}
+                                                                />
+                                                            ))
                                                     )}
 
                                                     {/* Tombol tambah dashed */}
@@ -717,6 +838,14 @@ export default function JadwalAbsensi({
                     absensi={detailAbsensi}
                     petugas={petugas}
                     rutes={rutes}
+                />
+
+                <ModalAutoGenerate
+                    open={showAutoGenerate}
+                    onClose={() => setShowAutoGenerate(false)}
+                    weekOffset={localOffset}
+                    startOfWeek={startOfWeek}
+                    endOfWeek={endOfWeek}
                 />
             </AdminLayout>
         </>

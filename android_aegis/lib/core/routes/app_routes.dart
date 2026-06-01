@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/petugas/screens/petugas_home_screen.dart';
-import '../../features/supervisor/screens/supervisor_home_screen.dart';
+import '../../features/supervisor/screens/home_page.dart';
 import '../../features/warga/screens/warga_home_screen.dart';
 
 class AppRoutes {
@@ -15,7 +15,7 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     login:          (_) => const LoginScreen(),
     petugasHome:    (_) => const PetugasHomeScreen(),
-    supervisorHome: (_) => const SupervisorHomeScreen(),
+    supervisorHome: (_) => const SupervisorHomePage(),
     wargaHome:      (_) => const WargaHomeScreen(),
   };
 }

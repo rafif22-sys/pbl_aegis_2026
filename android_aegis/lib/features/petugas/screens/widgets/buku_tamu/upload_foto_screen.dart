@@ -30,65 +30,42 @@ class _UploadFotoScreenState extends State<UploadFotoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 220,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200, width: 2),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildPhotoContent(),
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: ElevatedButton.icon(
-              onPressed: _openCameraDialog,
-              icon: Icon(
-                _imageFile == null
-                    ? Icons.camera_alt_rounded
-                    : Icons.refresh_rounded,
-                size: 18,
-              ),
-              label: Text(_imageFile == null ? 'Ambil Foto' : 'Foto Ulang'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF034DC0),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
-                ),
-              ),
-            ),
+    if (_imageFile == null) {
+      return ElevatedButton.icon(
+        onPressed: _openCameraDialog,
+        icon: const Icon(Icons.camera_alt_rounded, size: 18),
+        label: const Text('Ambil Foto'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF034DC0),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoContent() {
-    if (_imageFile != null) {
-      return _CapturedPhotoPreview(imageFile: _imageFile!);
+        ),
+      );
     }
 
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.camera_alt_rounded,
-          size: 48,
-          color: Color(0xFF034DC0),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 3 / 4,
+            child: _CapturedPhotoPreview(imageFile: _imageFile!),
+          ),
         ),
-        SizedBox(height: 12),
-        Text(
-          'Belum ada foto tamu',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: _openCameraDialog,
+          icon: const Icon(Icons.refresh_rounded, size: 18),
+          label: const Text('Foto Ulang'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF034DC0),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
           ),
         ),
       ],
@@ -115,7 +92,6 @@ class _CapturedPhotoPreview extends StatelessWidget {
             child: CircularProgressIndicator(color: Color(0xFF034DC0)),
           );
         }
-
         return Image.memory(snapshot.data!, fit: BoxFit.cover);
       },
     );
@@ -205,30 +181,50 @@ class _CameraCaptureDialogState extends State<_CameraCaptureDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Hitung tinggi layar agar dialog menyesuaikan
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Dialog(
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 620),
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: screenHeight * 0.85, // ← beri ruang cukup untuk tombol
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Header
             _buildHeader(),
-            AspectRatio(
-              aspectRatio: 4 / 3,
-              child: Container(
-                color: Colors.black,
-                child: _buildCameraContent(),
+
+            // Preview kamera — flex agar tombol tidak tertimpa
+            Flexible(
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Container(
+                  color: Colors.black,
+                  child: _buildCameraContent(),
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+
+            // Tombol — selalu tampil di bawah, tidak menimpa preview
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
                       child: const Text('Batal'),
                     ),
                   ),
@@ -241,6 +237,10 @@ class _CameraCaptureDialogState extends State<_CameraCaptureDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF034DC0),
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),

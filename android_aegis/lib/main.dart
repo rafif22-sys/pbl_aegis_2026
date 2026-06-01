@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'features/auth/providers/auth_provider.dart';
 import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
 
 import 'core/routes/app_routes.dart';
+import 'core/services/supabase_service.dart';
 
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
-import 'features/supervisor/screens/supervisor_home_screen.dart';
+import 'features/supervisor/screens/home_page.dart';
 import 'features/warga/screens/warga_home_screen.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // INIT SUPABASE
-  await Supabase.initialize(
-    url: 'https://dwyfjwwgrtdspgdaifyv.supabase.co',
-
-    // GANTI DENGAN ANON KEY KAMU
-    anonKey: 'MASUKKAN_ANON_KEY_SUPABASE_KAMU',
-  );
-
+  await SupabaseService.initialize();
   runApp(const MyApp());
 }
 
@@ -35,23 +28,29 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-
         ChangeNotifierProvider(create: (_) => SosProvider()),
-
         ChangeNotifierProvider(create: (_) => TamuProvider()),
       ],
-
       child: MaterialApp(
         title: 'AEGIS',
         debugShowCheckedModeBanner: false,
         routes: AppRoutes.routes,
+
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('id', 'ID'),
+          Locale('en', 'US'),
+        ],
+
         home: const AuthWrapper(),
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -70,6 +69,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkAuth() async {
+    // checkAuthStatus sekarang hanya baca cache lokal (cepat),
+    // server sync jalan di background — tidak memperlambat splash
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
 
     if (mounted) {
@@ -79,7 +80,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // SPLASH SCREEN
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: Color(0xFF041221),
@@ -87,27 +87,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // AUTH CHECK
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        if (!auth.isLoggedIn) {
-          return const LoginScreen();
-        }
+    final auth = context.watch<AuthProvider>();
+    if (!auth.isLoggedIn) return const LoginScreen();
 
-        switch (auth.user!.role) {
-          case 'petugas':
-            return const PetugasHomeScreen();
+    switch (auth.user!.role) {
+      case 'petugas':
+        return const PetugasHomeScreen();
 
-          case 'supervisor':
-            return const SupervisorHomeScreen();
+      case 'supervisor':
+        return const SupervisorHomePage();
+      case 'warga':
+        return const WargaHomeScreen();
 
-          case 'warga':
-            return const WargaHomeScreen();
-
-          default:
-            return const LoginScreen();
-        }
-      },
-    );
+      default:
+        return const LoginScreen();
+    }
   }
 }

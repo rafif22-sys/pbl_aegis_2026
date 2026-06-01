@@ -1,7 +1,7 @@
 // resources/js/utils/supabase.js
 
 export const SUPABASE_LOGO =
-    "https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo.png";
+    "https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/new_logo.png";
 
 const SUPABASE_URL    = "https://dwyfjwwgrtdspgdaifyv.supabase.co";
 const SUPABASE_BUCKET = "aegis";

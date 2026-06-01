@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../../../core/routes/app_routes.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/tamu_model.dart';
 import '../providers/tamu_provider.dart';
@@ -22,11 +22,31 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
   bool _isLoading = true;
   String? _errorMessage;
   List<TamuModel> _tamus = const [];
+  DateTime _selectedDate = DateTime.now();
+
+  // ── State filter baru ─────────────────────────
+  bool _showAllDates = false;        // true = tampilkan semua hari
+  String _searchQuery = '';          // query pencarian nama
+  String _filterStatus = 'semua';   // 'semua' | 'masuk' | 'keluar'
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
 
   @override
   void initState() {
     super.initState();
     _loadTamu();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTamu() async {
@@ -62,6 +82,33 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     });
   }
 
+  // ── Filter gabungan: tanggal + search + status ──
+  List<TamuModel> get _filteredTamus {
+    return _tamus.where((tamu) {
+      // 1. Filter tanggal (skip jika showAllDates)
+      if (!_showAllDates) {
+        final masuk = tamu.waktuMasuk.toLocal();
+        final matchDate = masuk.year == _selectedDate.year &&
+            masuk.month == _selectedDate.month &&
+            masuk.day == _selectedDate.day;
+        if (!matchDate) return false;
+      }
+
+      // 2. Filter nama (search)
+      if (_searchQuery.isNotEmpty) {
+        final namaLower = tamu.nama.toLowerCase();
+        if (!namaLower.contains(_searchQuery.toLowerCase())) return false;
+      }
+
+      // 3. Filter status
+      if (_filterStatus != 'semua') {
+        if (tamu.status != _filterStatus) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
   Future<void> _openForm() async {
     final result = await showDialog<bool>(
       context: context,
@@ -92,20 +139,37 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
     }
   }
 
-  Future<void> _openKeluarDialog(TamuModel tamu) async {
-    if (tamu.status == 'keluar') return;
+  Future<bool> _prosesKeluar(TamuModel tamu) async {
+    final token = context.read<AuthProvider>().token;
+    if (token == null) return false;
 
-    final result = await showDialog<bool>(
+    final result = await context.read<TamuProvider>().markKeluar(
+      token: token,
+      tamuId: tamu.id,
+      waktuKeluar: DateTime.now(),
+    );
+    return result.success;
+  }
+
+  Future<void> _openDetailDialog(TamuModel tamu) async {
+    final keluarBerhasil = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogContext) => Dialog(
         insetPadding: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        child: _KeluarTamuDialog(tamu: tamu),
+        child: _DetailTamuDialog(
+          tamu: tamu,
+          onKeluar: tamu.status == 'keluar'
+              ? null
+              : () => _prosesKeluar(tamu),
+        ),
       ),
     );
 
-    if (result == true && mounted) {
+    if (!mounted) return;
+
+    if (keluarBerhasil == true) {
       await _loadTamu();
       if (!mounted) return;
       NotificationScreen.show(
@@ -117,30 +181,14 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
         iconBackgroundColor: Colors.white,
         duration: const Duration(seconds: 3),
       );
-    }
-  }
-
-  Future<void> _openDetailDialog(TamuModel tamu) async {
-    await showDialog<void>(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (dialogContext) => Dialog(
-        insetPadding: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        child: _DetailTamuDialog(
-          tamu: tamu,
-          onKeluar: tamu.status == 'keluar'
-              ? null
-              : () async {
-                  Navigator.pop(dialogContext);
-                  await Future<void>.delayed(const Duration(milliseconds: 100));
-                  if (mounted) {
-                    await _openKeluarDialog(tamu);
-                  }
-                },
+    } else if (keluarBerhasil == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal mengubah status tamu.'),
+          behavior: SnackBarBehavior.floating,
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -154,12 +202,25 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
             child: RefreshIndicator(
               onRefresh: _loadTamu,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
+                  // ── Header: judul + toggle Semua/Hari Ini ──
                   Row(
-                    children: [
-                      const Icon(Icons.arrow_back, size: 28),
+                      children: [
+                      GestureDetector(          // ← tambahkan di sini
+                        onTap: () {
+                          final role = context.read<AuthProvider>().user?.role;
+                          final route = switch (role) {
+                            'petugas'    => AppRoutes.petugasHome,
+                            'supervisor' => AppRoutes.supervisorHome,
+                            'warga'      => AppRoutes.wargaHome,
+                            _            => AppRoutes.login,
+                          };
+                          Navigator.pushReplacementNamed(context, route);
+                        },
+                        child: const Icon(Icons.arrow_back, size: 28),
+                      ),
                       const SizedBox(width: 10),
                       const Text(
                         'Buku Tamu',
@@ -169,17 +230,13 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
                         ),
                       ),
                       const Spacer(),
-                      IconButton(
-                        onPressed: _loadTamu,
-                        icon: const Icon(Icons.refresh_rounded),
-                        tooltip: 'Muat ulang',
-                      ),
+                      _buildAllDatesToggle(),
                     ],
                   ),
                   const SizedBox(height: 20),
                   _buildDatePicker(),
                   const SizedBox(height: 15),
-                  _buildSearchBar(),
+                  _buildSearchAndFilter(),
                   const SizedBox(height: 20),
                   if (_isLoading)
                     const Padding(
@@ -197,92 +254,229 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
                         ),
                       ),
                     )
-                  else if (_tamus.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 60),
+                  else if (_filteredTamus.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 60),
                       child: Center(
-                        child: Text(
-                          'Belum ada data tamu.',
-                          style: TextStyle(color: Colors.grey),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.people_outline,
+                                size: 64, color: Colors.grey),
+                            const SizedBox(height: 12),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'Tamu "$_searchQuery" tidak ditemukan.'
+                                  : _showAllDates
+                                      ? 'Belum ada data tamu.'
+                                      : _isToday(_selectedDate)
+                                          ? 'Belum ada tamu hari ini.'
+                                          : 'Tidak ada tamu pada tanggal ini.',
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
                     )
                   else
-                    ..._tamus.map(_guestCard),
+                    ..._filteredTamus.map(_guestCard),
                 ],
               ),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openForm,
-        label: const Text(
-          'Tambah Tamu',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 50),
+        child: FloatingActionButton.extended(
+          onPressed: _openForm,
+          label: const Text(
+            'Tambah Tamu',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          icon: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: BukuTamuPage.kPrimary,
         ),
-        icon: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: BukuTamuPage.kPrimary,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  // ── Toggle Semua / Hari Ini (gantikan refresh button) ──
+  Widget _buildAllDatesToggle() {
+    return GestureDetector(
+      onTap: () => setState(() => _showAllDates = !_showAllDates),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: _showAllDates ? BukuTamuPage.kPrimary : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _showAllDates ? BukuTamuPage.kPrimary : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _showAllDates ? Icons.calendar_view_month : Icons.today,
+              size: 15,
+              color: _showAllDates ? Colors.white : BukuTamuPage.kPrimary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _showAllDates ? 'Semua Hari' : 'Hari Ini',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _showAllDates ? Colors.white : BukuTamuPage.kPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  // ── Search bar + filter status dalam satu baris ──
+  Widget _buildSearchAndFilter() {
+    // Label untuk button berdasarkan status aktif
+    final filterLabel = switch (_filterStatus) {
+      'masuk' => 'Masuk',
+      'keluar' => 'Keluar',
+      _ => null,
+    };
+    final isFiltered = _filterStatus != 'semua';
+
     return Row(
       children: [
+        // Search bar
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const TextField(
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
               decoration: InputDecoration(
                 hintText: 'Masukkan nama tamu',
+                hintStyle: const TextStyle(fontSize: 13),
                 border: InputBorder.none,
-                icon: Icon(Icons.search, color: Colors.grey),
+                icon: const Icon(Icons.search, color: Colors.grey, size: 20),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
+
+        const SizedBox(width: 8),
+
+        // Tombol filter — ikon kecil dengan badge dot jika aktif
+        PopupMenuButton<String>(
+          onSelected: (val) => setState(() => _filterStatus = val),
+          offset: const Offset(0, 44),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          itemBuilder: (_) => [
+            _popupItem('semua', 'Semua', Icons.people_outline, Colors.grey),
+            _popupItem('masuk', 'Masuk', Icons.login, const Color(0xFF034DC0)),
+            _popupItem('keluar', 'Keluar', Icons.logout, const Color(0xFF2EB24F)),
+          ],
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isFiltered
+                      ? BukuTamuPage.kPrimary.withValues(alpha: 0.1)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isFiltered
+                        ? BukuTamuPage.kPrimary
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: isFiltered ? BukuTamuPage.kPrimary : Colors.grey,
+                ),
+              ),
+              // Badge dot merah kecil jika ada filter aktif
+              if (isFiltered)
+                Positioned(
+                  top: -3,
+                  right: -3,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE53935),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          child: const Icon(Icons.tune, color: BukuTamuPage.kPrimary),
         ),
       ],
     );
   }
 
+PopupMenuItem<String> _popupItem(
+    String value, String label, IconData icon, Color color) {
+  final isSelected = _filterStatus == value;
+  return PopupMenuItem<String>(
+    value: value,
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: isSelected ? color : Colors.grey),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? color : Colors.black87,
+          ),
+        ),
+        if (isSelected) ...[
+          const Spacer(),
+          Icon(Icons.check, size: 14, color: color),
+        ],
+      ],
+    ),
+  );
+}
+
+  // ── Date picker (tombol "Semua" dihapus dari sini karena sudah pindah ke header) ──
   Widget _buildDatePicker() {
     final now = DateTime.now();
+    final isToday = _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
+
     final days = [
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu',
+      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
     ];
     final months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
     ];
 
     return Row(
@@ -296,38 +490,82 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
           child: const Icon(Icons.calendar_today, color: BukuTamuPage.kPrimary),
         ),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'HARI INI',
-              style: TextStyle(fontSize: 10, color: Colors.grey),
-            ),
-            Text(
-              '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Row(
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.calendar_month, size: 16),
-              Text(' Pilih Tanggal', style: TextStyle(fontSize: 12)),
-              Icon(Icons.keyboard_arrow_down, size: 16),
+              Text(
+                _showAllDates
+                    ? 'SEMUA HARI'
+                    : isToday
+                        ? 'HARI INI'
+                        : 'TANGGAL DIPILIH',
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+              Text(
+                _showAllDates
+                    ? 'Semua Data Tamu'
+                    : '${days[_selectedDate.weekday - 1]}, '
+                        '${_selectedDate.day} '
+                        '${months[_selectedDate.month - 1]} '
+                        '${_selectedDate.year}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
+          ),
+        ),
+        // Tombol Pilih Tanggal — disable saat mode Semua Hari
+        GestureDetector(
+          onTap: _showAllDates
+              ? null
+              : () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                    locale: const Locale('id', 'ID'),
+                  );
+                  if (picked != null) {
+                    setState(() => _selectedDate = picked);
+                  }
+                },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: _showAllDates ? Colors.grey.shade100 : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_month,
+                  size: 16,
+                  color: _showAllDates ? Colors.grey : Colors.black87,
+                ),
+                Text(
+                  ' Pilih Tanggal',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _showAllDates ? Colors.grey : Colors.black87,
+                  ),
+                ),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 16,
+                  color: _showAllDates ? Colors.grey : Colors.black87,
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
+  // ... _guestCard, _formatTime tetap sama seperti sebelumnya
   Widget _guestCard(TamuModel tamu) {
     final waktuMasuk = _formatTime(tamu.waktuMasuk);
     final waktuKeluar = tamu.waktuKeluar != null
@@ -424,117 +662,207 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
   }
 }
 
-class _DetailTamuDialog extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// _DetailTamuDialog: StatelessWidget → StatefulWidget
+// Desain 100% sama, hanya tambah _isProcessing untuk handle loading di tombol
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DetailTamuDialog extends StatefulWidget {
   const _DetailTamuDialog({required this.tamu, this.onKeluar});
 
   final TamuModel tamu;
-  final Future<void> Function()? onKeluar;
+  final Future<bool> Function()? onKeluar;
+
+  @override
+  State<_DetailTamuDialog> createState() => _DetailTamuDialogState();
+}
+
+class _DetailTamuDialogState extends State<_DetailTamuDialog> {
+  bool _isProcessing = false;
+
+  Future<void> _handleKeluar() async {
+    if (_isProcessing || widget.onKeluar == null) return;
+    setState(() => _isProcessing = true);
+    try {
+      final berhasil = await widget.onKeluar!();
+      if (!mounted) return;
+      Navigator.pop(context, berhasil);
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context, false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final fotoUrl = _resolveFotoUrl(tamu.fotoTamu);
-    final waktuMasuk =
-        '${_formatDate(tamu.waktuMasuk)} ${_formatTimeValue(tamu.waktuMasuk)}';
-    final waktuKeluar = tamu.waktuKeluar != null
-        ? '${_formatDate(tamu.waktuKeluar!)} ${_formatTimeValue(tamu.waktuKeluar!)}'
+    final fotoUrl = _resolveFotoUrl(widget.tamu.fotoTamu);
+    final waktuMasuk = _formatTimeValue(widget.tamu.waktuMasuk);
+    final waktuKeluarStr = widget.tamu.waktuKeluar != null
+        ? _formatTimeValue(widget.tamu.waktuKeluar!)
         : '-';
-    final status = tamu.status == 'keluar' ? 'Keluar' : 'Masuk';
-    final statusColor = tamu.status == 'keluar'
+    final isKeluar = widget.tamu.status == 'keluar';
+    final status = isKeluar ? 'Keluar' : 'Masuk';
+
+    final statusBgColor = isKeluar
+        ? const Color(0xFFC8E6C9)
+        : const Color(0xFFBBDEFB);
+    final statusTextColor = isKeluar
         ? const Color(0xFF2EB24F)
-        : const Color(0xFF9EB7F8);
+        : const Color(0xFF034DC0);
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 520),
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.black, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Informasi Tamu',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.black, width: 2),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            // ── Header ──────────────────────────────
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Informasi Tamu',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  Container(
-                    width: 38,
-                    height: 38,
+                ),
+                GestureDetector(
+                  onTap: _isProcessing ? null : () => Navigator.pop(context),
+                  child: Container(
+                    width: 30,
+                    height: 30,
                     decoration: const BoxDecoration(
                       color: Color(0xFFE85C5C),
                       shape: BoxShape.circle,
                     ),
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.white),
+                    child: const Icon(Icons.close, color: Colors.white, size: 18),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Foto BESAR (kiri) + Info (kanan) ────
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+
+                  // ── FOTO: lebih lebar & mengisi tinggi penuh ──
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      width: 150, // lebar lebih besar
+                      child: fotoUrl == null
+                          ? Container(
+                              color: const Color(0xFFF0F0F0),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 44,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : Image.network(
+                              fotoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: const Color(0xFFF0F0F0),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 44,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // ── Kolom kanan: badge oval BESAR + info rows ──
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        // Badge status OVAL penuh lebar
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: statusBgColor,
+                            borderRadius: BorderRadius.circular(50), // <-- oval/pill
+                          ),
+                          child: Text(
+                            status,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: statusTextColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        _infoRow(Icons.person, widget.tamu.nama),
+                        const SizedBox(height: 6),
+                        _infoRow(Icons.description_outlined, widget.tamu.keperluan),
+                        const SizedBox(height: 6),
+                        _infoRow(Icons.home_outlined, widget.tamu.alamat),
+                        const SizedBox(height: 6),
+                        _infoRow(Icons.badge_outlined, widget.tamu.namaUser),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isNarrow = constraints.maxWidth < 430;
-                  final photo = _photoPreview(fotoUrl);
-                  final info = _detailInfo(status, statusColor);
+            ),
 
-                  if (isNarrow) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [photo, const SizedBox(height: 16), info],
-                    );
-                  }
+            const SizedBox(height: 14),
+            Divider(color: Colors.grey.shade300),
+            const SizedBox(height: 8),
 
-                  return Row(
+            // ── Waktu + Tombol ───────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(flex: 5, child: photo),
-                      const SizedBox(width: 16),
-                      Expanded(flex: 5, child: info),
+                      _timelineItem(
+                        label: 'Masuk',
+                        value: waktuMasuk,
+                        color: const Color(0xFF2EB24F),
+                      ),
+                      const SizedBox(height: 6),
+                      _timelineItem(
+                        label: 'Keluar',
+                        value: waktuKeluarStr,
+                        color: const Color(0xFFE53935),
+                      ),
                     ],
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _timelineItem(
-                      label: 'Masuk',
-                      value: waktuMasuk,
-                      color: const Color(0xFF2EB24F),
-                    ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _timelineItem(
-                      label: 'Keluar',
-                      value: waktuKeluar,
-                      color: const Color(0xFFE53935),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Align(
-                alignment: Alignment.centerRight,
-                child: SizedBox(
-                  width: 160,
-                  height: 52,
+                ),
+
+                const SizedBox(width: 10),
+
+                SizedBox(
+                  height: 46,
                   child: ElevatedButton(
-                    onPressed: onKeluar == null ? null : () => onKeluar!(),
+                    onPressed: (isKeluar || _isProcessing) ? null : _handleKeluar,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2EB24F),
                       foregroundColor: Colors.white,
@@ -545,89 +873,29 @@ class _DetailTamuDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(26),
                       ),
                     ),
-                    child: const Text(
-                      'Tamu Keluar',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Tamu Keluar',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _photoPreview(String? fotoUrl) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: AspectRatio(
-        aspectRatio: 0.86,
-        child: Container(
-          color: const Color(0xFFF4F4F4),
-          child: fotoUrl == null
-              ? const Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 42,
-                    color: Colors.grey,
-                  ),
-                )
-              : Image.network(
-                  fotoUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        size: 42,
-                        color: Colors.grey,
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _detailInfo(String status, Color statusColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor == const Color(0xFF2EB24F)
-                    ? const Color(0xFF2EB24F)
-                    : const Color(0xFF4766C4),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        _infoRow(Icons.person, tamu.nama),
-        _separator(),
-        _infoRow(Icons.description_outlined, tamu.keperluan),
-        _separator(),
-        _infoRow(Icons.home_outlined, tamu.alamat),
-        _separator(),
-        _infoRow(Icons.badge_outlined, 'Petugas ${tamu.idUser}'),
-      ],
     );
   }
 
@@ -635,23 +903,16 @@ class _DetailTamuDialog extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Colors.black),
-        const SizedBox(width: 10),
+        Icon(icon, size: 15, color: Colors.black54),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 15),
+            style: const TextStyle(fontSize: 13),
             softWrap: true,
           ),
         ),
       ],
-    );
-  }
-
-  Widget _separator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Divider(color: Colors.black.withValues(alpha: 0.18), height: 1),
     );
   }
 
@@ -660,36 +921,26 @@ class _DetailTamuDialog extends StatelessWidget {
     required String value,
     required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade400, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.access_time, color: color, size: 18),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(fontSize: 14, color: Colors.black),
-                children: [
-                  TextSpan(
-                    text: '$label ',
-                    style: TextStyle(color: color, fontWeight: FontWeight.w700),
-                  ),
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
+    return Row(
+      children: [
+        Icon(Icons.access_time, color: color, size: 16),
+        const SizedBox(width: 6),
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(fontSize: 13, color: Colors.black),
+            children: [
+              TextSpan(
+                text: '$label  ',
+                style: TextStyle(color: color, fontWeight: FontWeight.w700),
               ),
-            ),
+              TextSpan(
+                text: value,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -711,10 +962,16 @@ class _KeluarTamuDialogState extends State<_KeluarTamuDialog> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _jamCtrl = TextEditingController(text: now.hour.toString().padLeft(2, '0'));
+
+    final waktu = (widget.tamu.status == 'masuk' && widget.tamu.waktuKeluar != null)
+        ? widget.tamu.waktuKeluar!
+        : DateTime.now();
+
+    _jamCtrl = TextEditingController(
+      text: waktu.hour.toString().padLeft(2, '0'),
+    );
     _menitCtrl = TextEditingController(
-      text: now.minute.toString().padLeft(2, '0'),
+      text: waktu.minute.toString().padLeft(2, '0'),
     );
   }
 

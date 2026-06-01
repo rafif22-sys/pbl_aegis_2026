@@ -10,6 +10,42 @@ use Inertia\Inertia;
 
 class RuteController extends Controller
 {
+    // ── HELPER: Haversine ────────────────────────────────
+    private function haversine(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $R    = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a    = sin($dLat / 2) ** 2 +
+                cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+                sin($dLon / 2) ** 2;
+        return $R * 2 * atan2(sqrt($a), sqrt(1 - $a));
+    }
+
+    // ── HELPER: Validasi jarak antar checkpoint ──────────
+    private function validasiJarakCheckpoint(array $checkpointIds): ?string
+    {
+        $checkpoints = Checkpoint::whereIn('id', $checkpointIds)->get()->keyBy('id');
+        $ordered     = collect($checkpointIds)
+            ->map(fn($id) => $checkpoints[$id] ?? null)
+            ->filter()
+            ->values();
+
+        for ($i = 0; $i < $ordered->count() - 1; $i++) {
+            $a     = $ordered[$i];
+            $b     = $ordered[$i + 1];
+            $jarak = $this->haversine(
+                (float) $a->latitude,  (float) $a->longitude,
+                (float) $b->latitude,  (float) $b->longitude,
+            );
+            if ($jarak > 500) {
+                return "Jarak antara '{$a->nama}' dan '{$b->nama}' terlalu jauh (" . round($jarak) . " m). Maksimal 500 m.";
+            }
+        }
+
+        return null;
+    }
+
     // ── INDEX ────────────────────────────────────────────
     public function index(Request $request)
     {
@@ -23,11 +59,8 @@ class RuteController extends Controller
             $query->where('nama_rute', 'like', '%' . $request->search . '%');
         }
 
-        // Ambil semua (tanpa paginasi) agar polyline di peta tetap lengkap.
-        // Jika data sangat banyak, ganti paginate(15) dan sesuaikan frontend.
         $rutes = $query->orderBy('nama_rute')->get();
 
-        // Semua checkpoint (untuk dropdown pilih di modal tambah/edit)
         $allCheckpoints = Checkpoint::select('id', 'nama', 'latitude', 'longitude')
             ->orderBy('nama')
             ->get();
@@ -54,9 +87,16 @@ class RuteController extends Controller
             'checkpoints.*.exists' => 'Checkpoint tidak valid.',
         ]);
 
+        // Validasi jarak antar checkpoint (maks 500 m)
+        $errorJarak = $this->validasiJarakCheckpoint($validated['checkpoints']);
+        if ($errorJarak) {
+            return back()
+                ->withErrors(['checkpoints' => $errorJarak])
+                ->withInput();
+        }
+
         $rute = Rute::create(['nama_rute' => $validated['nama_rute']]);
 
-        // Sync pivot rute_checkpoint dengan urutan sesuai posisi array
         $pivot = [];
         foreach ($validated['checkpoints'] as $urutan => $cpId) {
             $pivot[$cpId] = ['urutan' => $urutan + 1];
@@ -86,9 +126,16 @@ class RuteController extends Controller
             'checkpoints.*.exists' => 'Checkpoint tidak valid.',
         ]);
 
+        // Validasi jarak antar checkpoint (maks 500 m)
+        $errorJarak = $this->validasiJarakCheckpoint($validated['checkpoints']);
+        if ($errorJarak) {
+            return back()
+                ->withErrors(['checkpoints' => $errorJarak])
+                ->withInput();
+        }
+
         $rute->update(['nama_rute' => $validated['nama_rute']]);
 
-        // Sync ulang dengan urutan baru
         $pivot = [];
         foreach ($validated['checkpoints'] as $urutan => $cpId) {
             $pivot[$cpId] = ['urutan' => $urutan + 1];
@@ -103,7 +150,6 @@ class RuteController extends Controller
     // ── DESTROY ──────────────────────────────────────────
     public function destroy(Request $request, Rute $rute)
     {
-        // Hapus pivot terlebih dahulu, lalu hapus rute
         $rute->checkpoint()->detach();
         $rute->delete();
 

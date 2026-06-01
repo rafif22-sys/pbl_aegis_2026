@@ -8,9 +8,16 @@ class TopBarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double topPadding = MediaQuery.of(context).padding.top; // ambil tinggi status bar / notch
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
+      padding: EdgeInsets.only(
+        top: topPadding + 10, // konten turun sejauh status bar + 10px
+        left: 24,
+        right: 24,
+        bottom: 10,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF0F172A),
         borderRadius: BorderRadius.only(
@@ -19,33 +26,30 @@ class TopBarScreen extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
 
           // LOGO
           Image.network(
             logoUrl,
-            height: 44,
-            width: 92,
+            height: 30,
+            width: 30,
             fit: BoxFit.contain,
             errorBuilder: (_, __, ___) {
               return const Icon(
                 Icons.security,
                 color: Colors.lightBlueAccent,
-                size: 36,
+                size: 40,
               );
             },
           ),
 
           const SizedBox(width: 10),
 
-          // TEXT (ANTI OVERFLOW FIX)
-          const Expanded(
+          // TEXT
+          const Flexible(
             child: Text(
               'ADVANCED EMERGENCY & GUARD INFORMATION SYSTEM',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.left,
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 9,

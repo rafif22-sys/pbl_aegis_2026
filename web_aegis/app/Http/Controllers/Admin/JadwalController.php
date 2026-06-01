@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Services\JadwalAutoSchedulerService;
 
 class JadwalController extends Controller
 {
@@ -157,6 +158,23 @@ class JadwalController extends Controller
         $absensi->update($validated);
 
         return redirect()->back()->with('success', 'Jadwal berhasil diperbarui.');
+    }
+
+    public function autoGenerate(Request $request)
+    {
+        set_time_limit(120); // ← tambah ini
+
+        $validated = $request->validate([
+            'week_offset' => 'integer|min:0|max:52',
+        ]);
+
+        try {
+            $service = new JadwalAutoSchedulerService();
+            $result  = $service->generate($validated['week_offset'] ?? 0);
+            return redirect()->back()->with('success', $result['message']);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function destroyAbsensi(JadwalAbsensi $absensi)
