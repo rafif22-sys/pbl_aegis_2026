@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinyal SOS - AEGIS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg-blue: #e3f2fd; --dark-blue: #0d253f; --primary-blue: #1565c0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-blue); padding-bottom: 80px; }
+
+        .container { padding: 20px; }
+        h1 { font-size: 28px; margin-bottom: 20px; color: #000; font-weight: 800; }
+
+        /* Stats Cards */
+        .stats-row { display: flex; gap: 15px; margin-bottom: 30px; }
+        .stat-box { 
+            flex: 1; background: white; padding: 15px; border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--dark-blue);
+        }
+        .stat-box.green { border-left-color: #2e7d32; }
+        .stat-label { font-size: 12px; color: #666; font-weight: bold; margin-bottom: 5px; display: block; }
+        .stat-value-row { display: flex; justify-content: space-between; align-items: center; }
+        .stat-number { font-size: 32px; font-weight: bold; }
+        .stat-icon { font-size: 20px; }
+
+        /* List Header */
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-filter { 
+            background: var(--primary-blue); color: white; padding: 10px 20px; 
+            border-radius: 12px; border: none; font-weight: bold; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* SOS Cards */
+        .sos-card { 
+            background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .sos-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .sos-date { font-size: 13px; color: #666; margin-bottom: 5px; }
+        .sos-time { font-size: 24px; font-weight: bold; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .badge-waiting { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .badge-done { background: #e8f0fe; color: #1967d2; border: 1px solid #d2e3fc; }
+
+        .sos-card-bottom { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-top: 1px solid #eee; pt: 15px; padding-top: 15px;
+        }
+        .officer-info { display: flex; align-items: center; gap: 12px; }
+        .avatar-circle { width: 45px; height: 45px; background: #ddd; border-radius: 50%; overflow: hidden; }
+        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-arrow { 
+            width: 40px; height: 40px; background: var(--dark-blue); color: white; 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+        }
+        .btn-arrow.done { background: #eee; color: #666; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>SINYAL SOS</h1>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <span class="stat-label">Total Pesan SOS</span>
+                <div class="stat-value-row">
+                    <span class="stat-number">124</span>
+                    <i class="fas fa-chart-bar stat-icon" style="color: #1565c0;"></i>
+                </div>
+            </div>
+            <div class="stat-box green">
+                <span class="stat-label">SOS Dikonfirmasi</span>
+                <div class="stat-value-row">
+                    <span class="stat-number" style="color: #2e7d32;">118</span>
+                    <i class="far fa-check-circle stat-icon" style="color: #2e7d32;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="list-header">
+            <h2>Daftar SOS</h2>
+            <button class="btn-filter">Terbaru <i class="fas fa-bars-staggered"></i></button>
+        </div>
+
+        <!-- SOS Card 1: Waiting -->
+        <div class="sos-card">
+            <div class="sos-card-top">
+                <div>
+                    <p class="sos-date">Oct 24, 2023, Selasa</p>
+                    <p class="sos-time">14:30</p>
+                </div>
+                <span class="badge badge-waiting">Menunggu Bantuan</span>
+            </div>
+            <div class="sos-card-bottom">
+                <div class="officer-info">
+                    <div class="avatar-circle"><img src="https://via.placeholder.com/50" alt="Avatar"></div>
+                    <p style="font-weight: bold;">Andika Pratama</p>
+                </div>
+                <div class="btn-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+        </div>
+
+        <!-- SOS Card 2: Done -->
+        <div class="sos-card">
+            <div class="sos-card-top">
+                <div>
+                    <p class="sos-date">Oct 24, 2023, Selasa</p>
+                    <p class="sos-time">11:15</p>
+                </div>
+                <span class="badge badge-done">Selesai</span>
+            </div>
+            <div class="sos-card-bottom">
+                <div class="officer-info">
+                    <div class="avatar-circle"><img src="https://via.placeholder.com/50" alt="Avatar"></div>
+                    <p style="font-weight: bold;">Budi Santoso</p>
+                </div>
+                <div class="btn-arrow done"><i class="fas fa-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -227,6 +227,11 @@ class TamuController extends Controller
         $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');
         $bucket      = config('services.supabase.bucket', 'aegis');
 
+        $prefix = "storage/v1/object/public/{$bucket}/";
+        if (Str::startsWith($path, $prefix)) {
+            return "{$supabaseUrl}/{$path}";
+        }
+
         return "{$supabaseUrl}/storage/v1/object/public/{$bucket}/" . ltrim($path, '/');
     }
 }

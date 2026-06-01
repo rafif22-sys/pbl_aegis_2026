@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/petugas/providers/tamu_provider.dart';
 import 'features/sos/providers/sos_provider.dart';
-import 'features/sos/widgets/sos_loading_screen.dart';  
+import 'features/sos/widgets/sos_loading_screen.dart';
 import 'features/petugas/providers/pesan_provider.dart';
 
 import 'core/routes/app_routes.dart';
@@ -14,12 +14,12 @@ import 'firebase_options.dart';
 import 'core/services/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'core/services/supabase_service.dart';
 
 import 'features/auth/screens/login_screen.dart';
 import 'features/petugas/screens/petugas_home_screen.dart';
 import 'features/supervisor/screens/home_page.dart';
 import 'features/warga/screens/warga_home_screen.dart';
-import 'features/petugas/screens/pesan_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
@@ -37,6 +37,7 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
   await NotificationService.initialize();
 
+  await SupabaseService.initialize();
   runApp(const MyApp());
 }
 
@@ -91,7 +92,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkAuth() async {
     _pendingPayload = await NotificationService.getInitialPayload();
-
     await Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
 
     if (mounted) {
@@ -108,47 +108,45 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        if (!auth.isLoggedIn) return const LoginScreen();
+    final auth = context.watch<AuthProvider>();
 
-        int initialTab = 0;
-        if (_pendingPayload != null) {
-          final payload = _pendingPayload!;
-          
-          if (payload.startsWith('sos:')) {
-            final sosId = payload.replaceFirst('sos:', '');
-            return SosLoadingScreen(
-              sosId: sosId,
-              token: auth.token!,
-              role: auth.user!.role,
-              onDone: () {
-                if (mounted) {
-                  setState(() {
-                    _pendingPayload = null;
-                  });
-                }
-              },
-            );
-          } else if (payload.startsWith('info:')) {
-            initialTab = 3;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _pendingPayload = null);
-            });
-          }
-        }
+    if (!auth.isLoggedIn) return const LoginScreen();
 
-        switch (auth.user!.role) {
-          case 'petugas':
-            return PetugasHomeScreen(initialIndex: initialTab);
-          case 'supervisor':
-            return SupervisorHomePage(initialIndex: initialTab);
-          case 'warga':
-            return const WargaHomeScreen();
-          default:
-            return const LoginScreen();
-        }
-      },
-    );
+    // Handle pending notification payload
+    if (_pendingPayload != null) {
+      final payload = _pendingPayload!;
+
+      if (payload.startsWith('sos:')) {
+        final sosId = payload.replaceFirst('sos:', '');
+        return SosLoadingScreen(
+          sosId: sosId,
+          token: auth.token!,
+          role: auth.user!.role,
+          onDone: () {
+            if (mounted) {
+              setState(() => _pendingPayload = null);
+            }
+          },
+        );
+      } else if (payload.startsWith('info:')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _pendingPayload = null);
+        });
+      }
+    }
+
+    // Determine initial tab based on payload
+    final int initialTab = (_pendingPayload?.startsWith('info:') == true) ? 3 : 0;
+
+    switch (auth.user!.role) {
+      case 'petugas':
+        return PetugasHomeScreen(initialIndex: initialTab);
+      case 'supervisor':
+        return SupervisorHomePage(initialIndex: initialTab);
+      case 'warga':
+        return const WargaHomeScreen();
+      default:
+        return const LoginScreen();
+    }
   }
 }

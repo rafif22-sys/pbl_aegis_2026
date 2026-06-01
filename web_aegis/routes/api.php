@@ -43,8 +43,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── Buku Tamu Routes ────────────────────────────────
-    Route::middleware('role:petugas')->group(function () {
+    // GET — semua role bisa lihat
+    Route::middleware('role:petugas,supervisor,warga')->group(function () {
         Route::get('/tamu', [TamuController::class, 'index'])->name('tamu.index');
+    });
+    // POST/PATCH/PUT — hanya petugas yang bisa tambah/edit
+    Route::middleware('role:petugas')->group(function () {
         Route::post('/tamu', [TamuController::class, 'store'])->name('tamu.store');
         Route::patch('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.update');
         Route::put('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.put');
