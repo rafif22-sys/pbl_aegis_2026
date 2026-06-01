@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../repositories/sos_repository.dart';
-import '../../../features/auth/providers/auth_provider.dart';
 import '../../../features/petugas/screens/detail_sos_screen.dart';
+import '../../../features/warga/screens/detail_sos_screen.dart' as warga; // ← tambah ini
 
 class SosLoadingScreen extends StatefulWidget {
   final String sosId;
@@ -40,19 +39,19 @@ class _SosLoadingScreenState extends State<SosLoadingScreen> {
       if (!mounted) return;
 
       final navigator = Navigator.of(context);
-
       widget.onDone();
 
       navigator.push(
         MaterialPageRoute(
-          builder: (_) => DetailSosScreen(sos: sos),
+          builder: (_) => widget.role == 'warga'
+              ? warga.DetailSosScreen(sos: sos) // ← screen warga (tanpa konfirmasi)
+              : DetailSosScreen(sos: sos),       // ← screen petugas/supervisor
         ),
       );
 
     } catch (e) {
       debugPrint('Fetch SOS gagal: $e');
       if (!mounted) return;
-
       widget.onDone();
     }
   }

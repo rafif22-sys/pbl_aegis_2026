@@ -34,8 +34,8 @@ class JadwalAbsensi extends Model
     ];
 
     protected $casts = [
-        'jam_masuk'  => 'datetime:H:i:s',
-        'jam_pulang' => 'datetime:H:i:s',
+        'jam_masuk'  => 'datetime', 
+        'jam_pulang' => 'datetime',
         'latitude'   => 'float',
         'longitude'  => 'float',
     ];

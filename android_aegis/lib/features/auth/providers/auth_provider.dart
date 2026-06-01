@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // ← tambahkan
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -32,8 +32,6 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     _syncWithServer(cache.token!);
-
-    // ← Kirim ulang FCM token saat app dibuka (token bisa berubah)
     _sendFcmToken(cache.token!);
   }
 
@@ -41,6 +39,11 @@ class AuthProvider extends ChangeNotifier {
     try {
       final freshUser = await AuthService.getMe(token);
       _user = freshUser;
+
+      // Simpan role terbaru ke SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_role', freshUser.role);
+
       notifyListeners();
     } on Exception catch (e) {
       if (e.toString().contains('unauthorized')) {
@@ -62,9 +65,11 @@ class AuthProvider extends ChangeNotifier {
         _token = response['token'] as String;
         _user  = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
-        await AuthService.saveSession(_token!, _user!);
+        // Simpan role ke SharedPreferences setelah login berhasil
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_role', _user!.role);
 
-        // ← Kirim FCM token setelah login berhasil
+        await AuthService.saveSession(_token!, _user!);
         _sendFcmToken(_token!);
 
       } else {
@@ -90,13 +95,11 @@ class AuthProvider extends ChangeNotifier {
 
       await AuthService.saveFcmToken(authToken, fcmToken);
 
-      // Pantau jika Firebase memperbarui token (reinstall, dll)
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
         AuthService.saveFcmToken(authToken, newToken);
       });
 
     } catch (e) {
-      // Gagal simpan FCM token tidak perlu crash app
       debugPrint('FCM token error: $e');
     }
   }
@@ -120,5 +123,8 @@ class AuthProvider extends ChangeNotifier {
     _token        = null;
     _user         = null;
     _errorMessage = null;
+
+    // Hapus role dari SharedPreferences saat logout
+    SharedPreferences.getInstance().then((p) => p.remove('user_role'));
   }
 }

@@ -6,6 +6,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../models/absensi_model.dart';
 import '../repositories/absensi_repository.dart';
 import 'absen_foto_screen.dart';
+import '../../petugas/screens/sesi_patroli_screen.dart';
 
 class AbsensiScreen extends StatefulWidget {
   const AbsensiScreen({super.key});
@@ -979,7 +980,16 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                             SizedBox(
                               width: 150, 
                               child: ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SesiPatroliScreen(
+                                        idJadwalAbsensi: a.idJadwalAbsensi, 
+                                      ),
+                                    ),
+                                  );
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _greenBg,
                                   foregroundColor: Colors.white,

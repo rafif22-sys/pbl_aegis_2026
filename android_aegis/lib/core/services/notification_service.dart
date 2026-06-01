@@ -9,6 +9,8 @@ import '../../features/sos/repositories/sos_repository.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/petugas/screens/detail_sos_screen.dart';
 import '../../features/petugas/screens/pesan_screen.dart';
+import '../../features/warga/screens/detail_sos_screen.dart' as warga;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
@@ -129,9 +131,27 @@ class NotificationService {
         sosId: int.parse(sosId),
       );
 
+      // Ambil role dari AuthProvider, fallback ke SharedPreferences
+      // jika auth.user belum ter-load (misal app baru dibuka dari notif)
+      String role = auth.user?.role ?? '';
+      if (role.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        role = prefs.getString('user_role') ?? '';
+        debugPrint('🔍 Role dari SharedPreferences: "$role"');
+      }
+
       NavigationService.navigator?.push(
         MaterialPageRoute(
-          builder: (_) => DetailSosScreen(sos: sos),
+          builder: (_) {
+            switch (role) {
+              case 'warga':
+                return warga.DetailSosScreen(sos: sos);
+              case 'petugas':
+              case 'supervisor':
+              default:
+                return DetailSosScreen(sos: sos);
+            }
+          },
         ),
       );
     } catch (e) {

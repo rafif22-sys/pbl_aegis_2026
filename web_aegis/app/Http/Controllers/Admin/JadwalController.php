@@ -177,6 +177,65 @@ class JadwalController extends Controller
         }
     }
 
+   public function tukarLibur(Request $request)
+    {
+        $validated = $request->validate([
+            'id_absensi_libur_a' => 'required|exists:jadwal_absensi,id',
+            'id_absensi_libur_b' => 'required|exists:jadwal_absensi,id',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $absensiA = JadwalAbsensi::with('jadwal.shift')->findOrFail($validated['id_absensi_libur_a']);
+            $absensiB = JadwalAbsensi::with('jadwal.shift')->findOrFail($validated['id_absensi_libur_b']);
+
+            // Validasi: keduanya harus libur
+            if ($absensiA->status !== JadwalAbsensi::STATUS_LIBUR) {
+                return redirect()->back()->with('error', 'Petugas pertama harus berstatus libur.');
+            }
+            if ($absensiB->status !== JadwalAbsensi::STATUS_LIBUR) {
+                return redirect()->back()->with('error', 'Petugas kedua harus berstatus libur.');
+            }
+
+            $userA    = $absensiA->id_user;
+            $userB    = $absensiB->id_user;
+            $tanggalA = $absensiA->jadwal->tanggal;
+            $tanggalB = $absensiB->jadwal->tanggal;
+
+            if ($tanggalA === $tanggalB) {
+                return redirect()->back()->with('error', 'Kedua petugas libur di hari yang sama, tidak perlu ditukar.');
+            }
+
+            // Ambil SEMUA jadwal absensi milik A di tanggal A (termasuk yang libur)
+            $jadwalIdsTanggalA = Jadwal::where('tanggal', $tanggalA)->pluck('id');
+            $semuaAbsensiA     = JadwalAbsensi::whereIn('id_jadwal', $jadwalIdsTanggalA)
+                ->where('id_user', $userA)
+                ->get();
+
+            // Ambil SEMUA jadwal absensi milik B di tanggal B (termasuk yang libur)
+            $jadwalIdsTanggalB = Jadwal::where('tanggal', $tanggalB)->pluck('id');
+            $semuaAbsensiB     = JadwalAbsensi::whereIn('id_jadwal', $jadwalIdsTanggalB)
+                ->where('id_user', $userB)
+                ->get();
+
+            // Pindahkan semua record A (hari A) → ganti id_user menjadi B
+            foreach ($semuaAbsensiA as $a) {
+                $a->update(['id_user' => $userB]);
+            }
+
+            // Pindahkan semua record B (hari B) → ganti id_user menjadi A
+            foreach ($semuaAbsensiB as $b) {
+                $b->update(['id_user' => $userA]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Hari libur berhasil ditukar.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menukar libur: ' . $e->getMessage());
+        }
+    }
+
     public function destroyAbsensi(JadwalAbsensi $absensi)
     {
         $jadwalId = $absensi->id_jadwal;

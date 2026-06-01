@@ -16,6 +16,37 @@ class AbsensiController extends Controller
     // ── Helper: ambil jadwal absensi hari ini milik user ──────────────────
     private function getJadwalHariIni(): ?JadwalAbsensi
     {
+        $now = Carbon::now();
+
+        $shiftSemalam = JadwalAbsensi::with(['jadwal.shift', 'jadwal.posJaga', 'rute.checkpoint', 'user'])
+            ->where('id_user', Auth::id())
+            ->whereNotIn('status', ['libur', 'alpha'])
+            ->whereNotNull('jam_masuk')
+            ->whereNull('jam_pulang')
+            ->whereHas('jadwal', fn($q) =>
+                $q->whereDate('tanggal', Carbon::yesterday())
+            )
+            ->whereHas('jadwal.shift', function ($q) {
+                // PostgreSQL: cast ke time untuk perbandingan
+                $q->whereRaw('jam_selesai::time < jam_mulai::time');
+            })
+            ->first();
+
+        if ($shiftSemalam) {
+            $shift      = $shiftSemalam->jadwal->shift;
+            $tanggal    = Carbon::parse($shiftSemalam->jadwal->tanggal);
+            $jamSelesai = $tanggal->copy()
+                ->setTime($shift->jam_selesai->hour, $shift->jam_selesai->minute)
+                ->addDay();
+
+            $batasPulang = $jamSelesai->copy()->addMinutes(30);
+
+            if ($now->lessThanOrEqualTo($batasPulang)) {
+                return $shiftSemalam;
+            }
+        }
+
+        // Fallback: cari jadwal hari ini seperti biasa
         return JadwalAbsensi::with(['jadwal.shift', 'jadwal.posJaga', 'rute.checkpoint', 'user'])
             ->where('id_user', Auth::id())
             ->whereHas('jadwal', fn($q) =>
@@ -137,7 +168,8 @@ class AbsensiController extends Controller
             ->setTime($shift->jam_selesai->hour, $shift->jam_selesai->minute);
 
         // Handle shift malam (melewati tengah malam)
-        if ($shift->jam_selesai->format('H:i') < $shift->jam_mulai->format('H:i')) {
+        $isShiftMalam = $shift->jam_selesai->format('H:i') < $shift->jam_mulai->format('H:i');
+        if ($isShiftMalam) {
             $jamSelesai->addDay();
         }
 
@@ -171,11 +203,27 @@ class AbsensiController extends Controller
             }
         }
 
-        // Tentukan status akhir
-        $jamMulai    = Carbon::parse($ja->jadwal->tanggal)
+        $jamMulai = Carbon::parse($ja->jadwal->tanggal)
             ->setTime($shift->jam_mulai->hour, $shift->jam_mulai->minute);
-        $jamMasuk    = Carbon::parse($ja->jam_masuk);
-        $statusAkhir = $jamMasuk->greaterThan($jamMulai)
+
+        $jamMasuk = Carbon::parse($ja->jam_masuk);
+
+        Log::info('Debug status absen pulang', [
+            'tanggal_jadwal'   => $ja->jadwal->tanggal,
+            'jam_mulai_shift'  => $shift->jam_mulai->format('H:i'),
+            'jamMulai_parsed'  => $jamMulai->toDateTimeString(),
+            'jamMasuk_raw'     => $ja->jam_masuk,
+            'jamMasuk_parsed'  => $jamMasuk->toDateTimeString(),
+            'jamMasuk_tz'      => Carbon::parse($ja->jam_masuk)->timezone(config('app.timezone'))->toDateTimeString(),
+            'selisih_menit'    => $jamMasuk->diffInMinutes($jamMulai, false),
+            'is_terlambat'     => $jamMasuk->greaterThan($jamMulai->copy()->addMinute()),
+        ]);
+
+        // Untuk shift malam: jam masuk yang valid bisa sebelum tengah malam
+        // di hari yang sama dengan tanggal jadwal, sehingga perbandingan
+        // langsung dengan jamMulai sudah benar tanpa addDay.
+        // Toleransi 1 menit untuk menghindari selisih detik kecil.
+        $statusAkhir = $jamMasuk->greaterThan($jamMulai->copy()->addMinute())
             ? JadwalAbsensi::STATUS_TERLAMBAT
             : JadwalAbsensi::STATUS_HADIR;
 
@@ -246,12 +294,7 @@ class AbsensiController extends Controller
         ];
     }
 
-    // =========================================================================
-    // Upload foto ke Supabase — sama persis dengan TamuController
-    // Menerima UploadedFile (multipart/form-data dari Flutter)
-    //
-    // Path di DB  : foto_absensi/2026-05-28/pos-utama/shift-1/budi-santoso/fotomasuk.jpg
-    // =========================================================================
+    
     private function uploadFotoToSupabase(\Illuminate\Http\UploadedFile $file, string $path): string
     {
         $supabaseUrl = config('services.supabase.url');

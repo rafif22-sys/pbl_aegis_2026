@@ -82,21 +82,35 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
 
   List<TamuModel> get _filteredTamus {
     return _tamus.where((tamu) {
+      // Filter tanggal
       if (!_showAllDates) {
-        final masuk = tamu.waktuMasuk.toLocal();
-        final matchDate = masuk.year == _selectedDate.year &&
-            masuk.month == _selectedDate.month &&
-            masuk.day == _selectedDate.day;
-        if (!matchDate) return false;
+        final masuk  = tamu.waktuMasuk.toLocal();
+        final keluar = tamu.waktuKeluar?.toLocal() ?? masuk;
+
+        final hariMasuk   = DateTime(masuk.year, masuk.month, masuk.day);
+        final hariKeluar  = DateTime(keluar.year, keluar.month, keluar.day);
+        final hariDipilih = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+        );
+
+        // Tamu muncul jika tanggal dipilih berada dalam rentang masuk–keluar
+        final dalamRentang = !hariDipilih.isBefore(hariMasuk) &&
+            !hariDipilih.isAfter(hariKeluar);
+
+        if (!dalamRentang) return false;
       }
 
-      if (_searchQuery.isNotEmpty) {
-        final namaLower = tamu.nama.toLowerCase();
-        if (!namaLower.contains(_searchQuery.toLowerCase())) return false;
+      // Filter nama
+      if (_searchQuery.isNotEmpty &&
+          !tamu.nama.toLowerCase().contains(_searchQuery.toLowerCase())) {
+        return false;
       }
 
-      if (_filterStatus != 'semua') {
-        if (tamu.status != _filterStatus) return false;
+      // Filter status
+      if (_filterStatus != 'semua' && tamu.status != _filterStatus) {
+        return false;
       }
 
       return true;
@@ -122,85 +136,104 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
       body: Column(
         children: [
           const TopBarScreen(),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _loadTamu,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          final role = context.read<AuthProvider>().user?.role;
-                          final route = switch (role) {
-                            'petugas'    => AppRoutes.petugasHome,
-                            'supervisor' => AppRoutes.supervisorHome,
-                            'warga'      => AppRoutes.wargaHome,
-                            _            => AppRoutes.login,
-                          };
-                          Navigator.pushReplacementNamed(context, route);
-                        },
-                        child: const Icon(Icons.arrow_back, size: 28),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Buku Tamu',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      _buildAllDatesToggle(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDatePicker(),
-                  const SizedBox(height: 15),
-                  _buildSearchAndFilter(),
-                  const SizedBox(height: 20),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 20),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+
+          // ── Bagian atas (tidak ikut scroll) ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        final role = context.read<AuthProvider>().user?.role;
+                        final route = switch (role) {
+                          'petugas'    => AppRoutes.petugasHome,
+                          'supervisor' => AppRoutes.supervisorHome,
+                          'warga'      => AppRoutes.wargaHome,
+                          _            => AppRoutes.login,
+                        };
+                        Navigator.pushReplacementNamed(context, route);
+                      },
+                      child: const Icon(Icons.arrow_back, size: 28),
                     ),
-                    child: Column(
-                      children: [
-                        if (_filteredTamus.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 60),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const Icon(Icons.people_outline,
-                                      size: 64, color: Colors.grey),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _searchQuery.isNotEmpty
-                                        ? 'Tamu "$_searchQuery" tidak ditemukan.'
-                                        : _showAllDates
-                                            ? 'Belum ada data tamu.'
-                                            : _isToday(_selectedDate)
-                                                ? 'Belum ada tamu hari ini.'
-                                                : 'Tidak ada tamu pada tanggal ini.',
-                                    style: const TextStyle(
-                                        color: Colors.grey, fontSize: 14),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Buku Tamu',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    _buildAllDatesToggle(),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildDatePicker(),
+                const SizedBox(height: 15),
+                _buildSearchAndFilter(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+
+          // ── Container putih dengan card yang bisa scroll ──
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                        ? Center(
+                            child: Text(
+                              _errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.redAccent),
                             ),
                           )
-                        else
-                          ..._filteredTamus.map(_guestCard),
-                      ],
-                    ),
-                  ),
-                ],
+                        : _filteredTamus.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.people_outline,
+                                        size: 64, color: Colors.grey),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _searchQuery.isNotEmpty
+                                          ? 'Tamu "$_searchQuery" tidak ditemukan.'
+                                          : _showAllDates
+                                              ? 'Belum ada data tamu.'
+                                              : _isToday(_selectedDate)
+                                                  ? 'Belum ada tamu hari ini.'
+                                                  : 'Tidak ada tamu pada tanggal ini.',
+                                      style: const TextStyle(
+                                          color: Colors.grey, fontSize: 14),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : RefreshIndicator(
+                                onRefresh: _loadTamu,
+                                child: Scrollbar(
+                                  radius: const Radius.circular(10),
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    itemCount: _filteredTamus.length,
+                                    itemBuilder: (context, index) =>
+                                        _guestCard(_filteredTamus[index]),
+                                  ),
+                                ),
+                              ),
               ),
             ),
           ),
@@ -575,21 +608,36 @@ class _DetailTamuDialog extends StatelessWidget {
     return '$supabaseStorageUrl$cleaned';
   }
 
+  // Format waktu dengan tanggal — sama seperti DetailTamuDialog petugas
+  String _formatDateTime(DateTime dt) {
+    const bulan = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+    ];
+    final hh = dt.hour.toString().padLeft(2, '0');
+    final mm = dt.minute.toString().padLeft(2, '0');
+    return '${dt.day} ${bulan[dt.month]} ${dt.year}, $hh:$mm';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final fotoUrl = _resolveFotoUrl(tamu.fotoTamu);
-    final waktuMasuk = _formatTimeValue(tamu.waktuMasuk);
-    final waktuKeluarStr = tamu.waktuKeluar != null
-        ? _formatTimeValue(tamu.waktuKeluar!)
+    final fotoUrl      = _resolveFotoUrl(tamu.fotoTamu);
+    final sudahKeluar  = tamu.status == 'keluar';
+    final isEstimasi   = !sudahKeluar && tamu.waktuKeluar != null;
+
+    final status         = sudahKeluar ? 'Keluar' : 'Masuk';
+    final statusBgColor  = sudahKeluar ? const Color(0xFFC8E6C9) : const Color(0xFFBBDEFB);
+    final statusTextColor = sudahKeluar ? const Color(0xFF2EB24F) : const Color(0xFF034DC0);
+
+    final waktuMasukStr = _formatDateTime(tamu.waktuMasuk.toLocal());
+
+    final waktuKeluarStr = sudahKeluar && tamu.waktuKeluar != null
+        ? _formatDateTime(tamu.waktuKeluar!.toLocal())
         : '-';
-    final isKeluar = tamu.status == 'keluar';
-    final status = isKeluar ? 'Keluar' : 'Masuk';
-    final statusBgColor = isKeluar
-        ? const Color(0xFFC8E6C9)
-        : const Color(0xFFBBDEFB);
-    final statusTextColor = isKeluar
-        ? const Color(0xFF2EB24F)
-        : const Color(0xFF034DC0);
+
+    final estimasiStr = isEstimasi
+        ? _formatDateTime(tamu.waktuKeluar!.toLocal())
+        : null;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 360),
@@ -604,7 +652,7 @@ class _DetailTamuDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
 
-            // ── Header ──────────────────────────────
+            // ── Header ──
             Row(
               children: [
                 const Expanded(
@@ -630,13 +678,11 @@ class _DetailTamuDialog extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // ── Foto BESAR (kiri) + Info (kanan) ────
+            // ── Foto + Info ──
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-
-                  // ── FOTO ──
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: SizedBox(
@@ -646,11 +692,8 @@ class _DetailTamuDialog extends StatelessWidget {
                           ? Container(
                               color: const Color(0xFFF0F0F0),
                               child: const Center(
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 44,
-                                  color: Colors.grey,
-                                ),
+                                child: Icon(Icons.image_not_supported_outlined,
+                                    size: 44, color: Colors.grey),
                               ),
                             )
                           : Image.network(
@@ -661,20 +704,15 @@ class _DetailTamuDialog extends StatelessWidget {
                                 return Container(
                                   color: const Color(0xFFF0F0F0),
                                   child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
                                   ),
                                 );
                               },
                               errorBuilder: (_, __, ___) => Container(
                                 color: const Color(0xFFF0F0F0),
                                 child: const Center(
-                                  child: Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 44,
-                                    color: Colors.grey,
-                                  ),
+                                  child: Icon(Icons.broken_image_outlined,
+                                      size: 44, color: Colors.grey),
                                 ),
                               ),
                             ),
@@ -683,13 +721,10 @@ class _DetailTamuDialog extends StatelessWidget {
 
                   const SizedBox(width: 12),
 
-                  // ── Kolom kanan: badge + info rows ──
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-
-                        // Badge status oval
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -707,9 +742,7 @@ class _DetailTamuDialog extends StatelessWidget {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 10),
-
                         _infoRow(Icons.person, tamu.nama),
                         const SizedBox(height: 6),
                         _infoRow(Icons.description_outlined, tamu.keperluan),
@@ -728,27 +761,34 @@ class _DetailTamuDialog extends StatelessWidget {
             Divider(color: Colors.grey.shade300),
             const SizedBox(height: 8),
 
-            // ── Waktu (tanpa tombol aksi) ────────────
-            Row(
+            // ── Waktu (dengan tanggal + estimasi jika belum keluar) ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _timelineItem(
-                        label: 'Masuk',
-                        value: waktuMasuk,
-                        color: const Color(0xFF2EB24F),
-                      ),
-                      const SizedBox(height: 6),
-                      _timelineItem(
-                        label: 'Keluar',
-                        value: waktuKeluarStr,
-                        color: const Color(0xFFE53935),
-                      ),
-                    ],
-                  ),
+                _timelineItem(
+                  label: 'Masuk',
+                  value: waktuMasukStr,
+                  color: const Color(0xFF2EB24F),
                 ),
+                const SizedBox(height: 6),
+
+                // Estimasi keluar (kuning) — hanya jika status masih masuk
+                if (estimasiStr != null) ...[
+                  _timelineItem(
+                    label: 'Estimasi Keluar',
+                    value: estimasiStr,
+                    color: const Color(0xFFFF8F00),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
+                // Waktu keluar aktual (merah) — hanya jika sudah keluar
+                if (sudahKeluar)
+                  _timelineItem(
+                    label: 'Keluar',
+                    value: waktuKeluarStr,
+                    color: const Color(0xFFE53935),
+                  ),
               ],
             ),
           ],
@@ -764,11 +804,7 @@ class _DetailTamuDialog extends StatelessWidget {
         Icon(icon, size: 15, color: Colors.black54),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 13),
-            softWrap: true,
-          ),
+          child: Text(value, style: const TextStyle(fontSize: 13), softWrap: true),
         ),
       ],
     );
@@ -780,20 +816,30 @@ class _DetailTamuDialog extends StatelessWidget {
     required Color color,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(Icons.access_time, color: color, size: 16),
         const SizedBox(width: 6),
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(fontSize: 13, color: Colors.black),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextSpan(
-                text: '$label  ',
-                style: TextStyle(color: color, fontWeight: FontWeight.w700),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              TextSpan(
-                text: value,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),

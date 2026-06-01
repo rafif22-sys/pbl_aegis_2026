@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../sos/providers/sos_provider.dart';
+import '../../sos/models/sos_model.dart';
 import 'sos_form_screen.dart';
 import 'buku_tamu_screen.dart';
 import 'laporan_patroli_screen.dart';
@@ -24,12 +26,30 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch data SOS saat pertama kali dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchSos());
+  }
+
+  Future<void> _fetchSos() async {
+    final token = context.read<AuthProvider>().token ?? '';
+    if (token.isEmpty) return;
+    await context.read<SosProvider>().fetchListSOS(token: token);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final String namaWarga = authProvider.user?.nama ?? 'Warga';
 
+    // Cek apakah ada SOS yang masih menunggu
+    final sosProvider   = context.watch<SosProvider>();
+    final adaSosMenunggu = sosProvider.sosList
+        .any((s) => s.status == StatusSOS.menungguBantuan);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFE6F2F9),
+      backgroundColor: const Color(0xFFDCEFFE),
       body: _selectedIndex == 0
           ? SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 20),
@@ -45,10 +65,11 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
               ),
             )
           : _pages[_selectedIndex],
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: _buildBottomNavigationBar(adaSosMenunggu),
     );
   }
 
+  // ── HEADER ─────────────────────────────────────────────────────────────────
   Widget _buildHeader(String namaWarga) {
     return Container(
       width: double.infinity,
@@ -110,18 +131,12 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
             decoration: BoxDecoration(
               color: Colors.orange.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.orange.withOpacity(0.4),
-              ),
+              border: Border.all(color: Colors.orange.withOpacity(0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 13,
-                  color: Colors.orange,
-                ),
+                Icon(Icons.person_outline, size: 13, color: Colors.orange),
                 SizedBox(width: 5),
                 Text(
                   'Warga',
@@ -140,6 +155,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     );
   }
 
+  // ── SOS BUTTON ─────────────────────────────────────────────────────────────
   Widget _buildSOSButton() {
     return GestureDetector(
       onTap: () {
@@ -197,11 +213,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const Icon(
-                    Icons.shield_outlined,
-                    size: 34,
-                    color: Colors.white,
-                  ),
+                  const Icon(Icons.shield_outlined, size: 34, color: Colors.white),
                   const Text(
                     'SOS',
                     style: TextStyle(
@@ -219,6 +231,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     );
   }
 
+  // ── ACTION BUTTONS ─────────────────────────────────────────────────────────
   Widget _buildActionButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -227,12 +240,10 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BukuTamuScreen()),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BukuTamuScreen()),
+              ),
               child: _buildMenuCard(
                 icon: Icons.badge_outlined,
                 title: 'Buku Tamu',
@@ -242,12 +253,11 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
           const SizedBox(width: 20),
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LaporanPatroliScreen()),
-                );
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const LaporanPatroliScreen()),
+              ),
               child: _buildMenuCard(
                 icon: Icons.insert_chart_outlined,
                 title: 'Laporan',
@@ -291,11 +301,7 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                size: 36,
-                color: const Color(0xFF1A67DD),
-              ),
+              child: Icon(icon, size: 36, color: const Color(0xFF1A67DD)),
             ),
             const SizedBox(height: 10),
             Text(
@@ -312,7 +318,8 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  // ── BOTTOM NAV ─────────────────────────────────────────────────────────────
+  Widget _buildBottomNavigationBar(bool adaSosMenunggu) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
       decoration: BoxDecoration(
@@ -337,16 +344,19 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
             icon: Icons.home_filled,
             label: 'Beranda',
             index: 0,
+            showBadge: false,
           ),
           _buildBottomNavItem(
             icon: Icons.warning_amber_rounded,
             label: 'Riwayat',
             index: 1,
+            showBadge: adaSosMenunggu, // ← badge merah jika ada SOS menunggu
           ),
           _buildBottomNavItem(
             icon: Icons.person_outline,
             label: 'Profil',
             index: 2,
+            showBadge: false,
           ),
         ],
       ),
@@ -357,35 +367,52 @@ class _WargaHomeScreenState extends State<WargaHomeScreen> {
     required IconData icon,
     required String label,
     required int index,
+    required bool showBadge,
   }) {
-    bool isSelected = _selectedIndex == index;
+    final isSelected = _selectedIndex == index;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
+      onTap: () => setState(() => _selectedIndex = index),
       child: Container(
         color: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFE4F1FA)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(
-                icon,
-                size: 26,
-                color: isSelected
-                    ? const Color(0xFF2280F0)
-                    : Colors.grey.shade400,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFE4F1FA)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 26,
+                    color: isSelected
+                        ? const Color(0xFF2280F0)
+                        : Colors.grey.shade400,
+                  ),
+                ),
+
+                
+                if (showBadge)
+                  Positioned(
+                    top: 2,
+                    right: 10,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(

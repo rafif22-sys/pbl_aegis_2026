@@ -9,4 +9,5 @@ export const menuItems = [
     { label: "Pos Jaga",         icon: Icon.PosJaga,     route: "admin.pos-jaga.index" },
     { label: "Rute Patroli",        icon: Icon.Rute,        route: "admin.rute.index" },
     { label: "Buku Tamu",        icon: Icon.BukuTamu,    route: "admin.buku-tamu.index" },
+    { label: "Riwayat SOS",        icon: Icon.Sos,         route: "admin.sos.index" },
 ];
