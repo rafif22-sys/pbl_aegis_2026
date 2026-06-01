@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -33,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
 
     // Ada cache → langsung set state (UI tidak terblokir)
     _token = cache.token;
-    _user  = cache.user;
+    _user = cache.user;
     notifyListeners();
 
     // Sync ke server secara background (fire-and-forget)
@@ -58,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Login normal ───────────────────────────────────────
   Future<void> login(String email, String password) async {
-    _isLoading    = true;
+    _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
@@ -67,12 +66,13 @@ class AuthProvider extends ChangeNotifier {
 
       if (response['token'] != null && response['user'] != null) {
         _token = response['token'] as String;
-        _user  = UserModel.fromJson(response['user'] as Map<String, dynamic>);
+        _user = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
         // Simpan token + data user ke cache lokal
         await AuthService.saveSession(_token!, _user!);
       } else {
-        _errorMessage = (response['message'] as String?) ?? 'Login gagal, coba lagi.';
+        _errorMessage =
+            (response['message'] as String?) ?? 'Login gagal, coba lagi.';
       }
     } on SocketException {
       _errorMessage = 'Tidak ada koneksi internet.';
@@ -103,7 +103,7 @@ class AuthProvider extends ChangeNotifier {
 
   void _clearState() {
     _token = null;
-    _user  = null;
+    _user = null;
     _errorMessage = null;
   }
 }
