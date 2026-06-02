@@ -58,12 +58,13 @@ class PesanController extends Controller
         $waktuKirim = $informasi->waktu_kirim;
 
         return [
-            'id' => $informasi->id,
-            'sender' => $this->namaPengirim($informasi),
-            'time' => $waktuKirim?->locale('id')->translatedFormat('d F Y | H.i'),
-            'content' => $informasi->pesan,
-            'isStarred' => in_array((int) $informasi->id, $favoriteIds, true),
-            'isUnread' => $this->isUnread($informasi, $userId, $lastRead),
+            'id'               => $informasi->id,
+            'sender'           => $this->namaPengirim($informasi),
+            'role'             => $role, // ← tambah ini
+            'time'             => $waktuKirim?->locale('id')->translatedFormat('d F Y | H.i'),
+            'content'          => $informasi->pesan,
+            'isStarred'        => in_array((int) $informasi->id, $favoriteIds, true),
+            'isUnread'         => $this->isUnread($informasi, $userId, $lastRead),
             'hasLeftIndicator' => $role === 'supervisor',
         ];
     }
@@ -116,12 +117,11 @@ class PesanController extends Controller
     private function namaPengirim(Informasi $informasi): string
     {
         $role = strtolower((string) ($informasi->user->role ?? ''));
+        $nama = $informasi->user->nama ?? 'Unknown';
 
         return match ($role) {
-            'admin' => 'Admin',
-            'supervisor' => 'Supervisor',
             'aegis', 'system' => 'AEGIS',
-            default => $informasi->user->nama ?? 'Unknown',
+            default            => $nama, // ← cukup nama saja tanpa role
         };
     }
 

@@ -455,7 +455,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             label: 'Riwayat',
             index: 2,
           ),
-          _buildNavItem(icon: Icons.message_outlined, label: 'Pesan', index: 3),
+          _buildNavItem(icon: Icons.info_outline, label: 'Informasi', index: 3),
           _buildNavItem(icon: Icons.person_outline, label: 'Profil', index: 4),
         ],
       ),
