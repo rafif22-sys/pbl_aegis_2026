@@ -11,6 +11,7 @@ import '../providers/pesan_provider.dart';
 import '../../../core/services/notification_service.dart';
 import 'dart:async';
 import 'absensi_screen.dart';
+import 'profil_petugas_screen.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -26,11 +27,11 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
   late StreamSubscription _tabSub;
 
   final List<Widget> _pages = [
-    const SizedBox(),
-    const JadwalScreen(),
-    const RiwayatSosScreen(),
-    const MessageScreen(),
-    const SizedBox(),
+    const SizedBox(), // Index 0: Beranda (dihandle di body)
+    const JadwalScreen(), // Index 1: Jadwal
+    const RiwayatSosScreen(), // Index 2: Riwayat
+    const MessageScreen(), // Index 3: Pesan
+    const ProfilPetugasScreen(), // Index 4: Profil
   ];
 
   late AnimationController _animController;
@@ -77,15 +78,13 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
       ),
     );
-    _headerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
-      ),
-    );
+    _headerSlide =
+        Tween<Offset>(begin: const Offset(0, -0.08), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+          ),
+        );
 
     _sosFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
@@ -106,15 +105,13 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
       ),
     );
-    _menuSlide = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _menuSlide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
+          ),
+        );
 
     _animController.forward();
   }
@@ -132,7 +129,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     final String namaPetugas = user?.nama ?? 'Petugas';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFDCEFFE),  // ← sesuai
+      backgroundColor: const Color(0xFFDCEFFE), // ← sesuai
       body: _selectedIndex == 0
           ? Column(
               children: [
@@ -197,18 +194,28 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               return const SizedBox(
                 height: 160,
                 child: Center(
-                  child: CircularProgressIndicator(color: Colors.lightBlueAccent),
+                  child: CircularProgressIndicator(
+                    color: Colors.lightBlueAccent,
+                  ),
                 ),
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.broken_image, color: Colors.white54, size: 70);
+              return const Icon(
+                Icons.broken_image,
+                color: Colors.white54,
+                size: 70,
+              );
             },
           ),
           const SizedBox(height: 4),
           const Text(
             'Selamat Datang,',
-            style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+              letterSpacing: 0.5,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -231,7 +238,11 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.shield_outlined, size: 13, color: Colors.lightBlueAccent),
+                Icon(
+                  Icons.shield_outlined,
+                  size: 13,
+                  color: Colors.lightBlueAccent,
+                ),
                 SizedBox(width: 5),
                 Text(
                   'Petugas Keamanan',
@@ -306,7 +317,11 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const Icon(Icons.shield_outlined, size: 34, color: Colors.white),
+                  const Icon(
+                    Icons.shield_outlined,
+                    size: 34,
+                    color: Colors.white,
+                  ),
                   const Text(
                     'SOS',
                     style: TextStyle(
@@ -332,15 +347,16 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => BukuTamuPage(),
-                ),
+                MaterialPageRoute(builder: (_) => BukuTamuPage()),
               );
 
               // Navigator.push(context,
               //   MaterialPageRoute(builder: (_) => const BukuTamuPetugasPage()));
             },
-            child: _buildMenuCard(icon: Icons.badge_outlined, title: 'Buku Tamu'),
+            child: _buildMenuCard(
+              icon: Icons.badge_outlined,
+              title: 'Buku Tamu',
+            ),
           ),
         ),
         const SizedBox(width: 20),
@@ -352,7 +368,10 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                 MaterialPageRoute(builder: (_) => const AbsensiScreen()),
               );
             },
-            child: _buildMenuCard(icon: Icons.fact_check_outlined, title: 'Absen'),
+            child: _buildMenuCard(
+              icon: Icons.fact_check_outlined,
+              title: 'Absen',
+            ),
           ),
         ),
       ],
@@ -431,8 +450,12 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         children: [
           _buildNavItem(icon: Icons.home_filled, label: 'Beranda', index: 0),
           _buildNavItem(icon: Icons.calendar_month, label: 'Jadwal', index: 1),
-          _buildNavItem(icon: Icons.warning_amber_rounded, label: 'Riwayat', index: 2),
-          _buildNavItem(icon: Icons.info_outline, label: 'Informasi', index: 3),
+          _buildNavItem(
+            icon: Icons.warning_amber_rounded,
+            label: 'Riwayat',
+            index: 2,
+          ),
+          _buildNavItem(icon: Icons.message_outlined, label: 'Pesan', index: 3),
           _buildNavItem(icon: Icons.person_outline, label: 'Profil', index: 4),
         ],
       ),
@@ -466,7 +489,9 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE4F1FA) : Colors.transparent,
+                color: isSelected
+                    ? const Color(0xFFE4F1FA)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Stack(
@@ -499,7 +524,9 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade500,
+                color: isSelected
+                    ? const Color(0xFF2280F0)
+                    : Colors.grey.shade500,
               ),
             ),
           ],

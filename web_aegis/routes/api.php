@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Petugas Routes ──────────────────────────────────
     Route::middleware('role:petugas')->prefix('petugas')->name('petugas.')->group(function () {
         Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
+
         Route::prefix('jadwal')->name('jadwal.')->group(function () {
             Route::get('/mingguan', [JadwalController::class, 'mingguan'])->name('mingguan');
             Route::get('/absensi', [JadwalController::class, 'riwayatAbsensi'])->name('absensi.index');
@@ -45,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('patroli')->name('patroli.')->group(function () {
             Route::get( '/{idJadwalAbsensi}',        [PatroliController::class, 'getSesi'])      ->name('sesi');
             Route::post('/{idJadwalAbsensi}/lokasi', [PatroliController::class, 'updateLokasi']) ->name('lokasi');
+            // Route::get('/absensi/{id}', [JadwalController::class, 'showAbsensi'])->name('absensi.show');
         });
     });
 

@@ -28,7 +28,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     _token = cache.token;
-    _user  = cache.user;
+    _user = cache.user;
     notifyListeners();
 
     _syncWithServer(cache.token!);
@@ -54,7 +54,7 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Login normal ───────────────────────────────────────
   Future<void> login(String email, String password) async {
-    _isLoading    = true;
+    _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
@@ -63,7 +63,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (response['token'] != null && response['user'] != null) {
         _token = response['token'] as String;
-        _user  = UserModel.fromJson(response['user'] as Map<String, dynamic>);
+        _user = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
         // Simpan role ke SharedPreferences setelah login berhasil
         final prefs = await SharedPreferences.getInstance();
@@ -73,7 +73,8 @@ class AuthProvider extends ChangeNotifier {
         _sendFcmToken(_token!);
 
       } else {
-        _errorMessage = (response['message'] as String?) ?? 'Login gagal, coba lagi.';
+        _errorMessage =
+            (response['message'] as String?) ?? 'Login gagal, coba lagi.';
       }
     } on SocketException {
       _errorMessage = 'Tidak ada koneksi internet.';
