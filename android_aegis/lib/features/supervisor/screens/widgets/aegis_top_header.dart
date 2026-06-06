@@ -24,7 +24,7 @@ class AegisTopHeader extends StatelessWidget {
             height: 30,
             width: 30,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (_, _, _) => const Icon(
               Icons.shield, 
               color: Colors.lightBlueAccent, 
               size: 30,

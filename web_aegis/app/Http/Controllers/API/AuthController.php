@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -16,21 +16,18 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'       => ['required', 'email'],
-            'password'    => ['required'],
-            // 'device_name' => ['required', 'string'], 
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
         ]);
 
         $user = User::where('email', $request->email)->first();
 
-        // Validasi kredensial
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email atau password salah.',
             ], 401);
         }
 
-        // Hanya role non-admin yang boleh akses API
         $allowedRoles = ['petugas', 'warga', 'supervisor'];
         if (! in_array($user->role, $allowedRoles)) {
             return response()->json([
@@ -38,10 +35,17 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Hapus token lama device yang sama (opsional, hindari duplikasi)
-        $user->tokens()->where('name', $request->device_name)->delete();
+        // Hapus FCM token dari user lain yang pakai HP yang sama
+        if ($request->filled('fcm_token')) {
+            User::where('fcm_token', $request->fcm_token)
+                ->where('id', '!=', $user->id)
+                ->update(['fcm_token' => null]);
 
-        // Buat token baru dengan ability sesuai role
+            // Langsung simpan token ke user yang login
+            $user->update(['fcm_token' => $request->fcm_token]);
+        }
+
+        $user->tokens()->where('name', $request->device_name)->delete();
         $token = $user->createToken('mobile-app', [$user->role]);
 
         return response()->json([
@@ -59,20 +63,38 @@ class AuthController extends Controller
         ]);
     }
 
+    public function saveFcmToken(Request $request): JsonResponse
+    {
+        $request->validate([
+            'fcm_token' => ['required', 'string', 'max:500'],
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FCM token berhasil disimpan.',
+        ]);
+    }
+
     // ── Logout API ──────────────────────────────────────
     public function logout(Request $request): JsonResponse
     {
-        // Hapus hanya token yang dipakai sekarang
+        // Hapus FCM token saat logout
+        $request->user()->update(['fcm_token' => null]);
+        
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Logout berhasil.',
         ]);
     }
-
     // ── Logout semua device ─────────────────────────────
     public function logoutAll(Request $request): JsonResponse
     {
+        $request->user()->update(['fcm_token' => null]);
         $request->user()->tokens()->delete();
 
         return response()->json([

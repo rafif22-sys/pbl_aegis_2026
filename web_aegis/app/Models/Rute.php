@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 // import relasi
 use App\Models\Checkpoint;
+use App\Models\RuteCheckpoint;
 
 class Rute extends Model
 {
@@ -35,5 +36,11 @@ class Rute extends Model
     public function jadwal_absensi()
     {
         return $this->hasMany(JadwalAbsensi::class, 'id_rute');
+    }
+
+    public function ruteCheckpoints()
+    {
+        return $this->hasMany(RuteCheckpoint::class, 'id_rute')
+                    ->orderBy('urutan');
     }
 }

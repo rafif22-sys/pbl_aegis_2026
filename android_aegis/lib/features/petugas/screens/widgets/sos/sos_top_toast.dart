@@ -9,6 +9,8 @@ class SosTopToast {
     required String message,
     required Color backgroundColor,
     IconData icon = Icons.check_circle,
+    Color iconColor = Colors.white,
+    Color? iconBackgroundColor,
     Duration duration = const Duration(seconds: 3),
   }) {
     final overlay = Overlay.of(context);
@@ -19,6 +21,8 @@ class SosTopToast {
         message: message,
         backgroundColor: backgroundColor,
         icon: icon,
+        iconColor: iconColor,
+        iconBackgroundColor: iconBackgroundColor,
         duration: duration,
         onDismiss: () => entry.remove(),
       ),
@@ -32,6 +36,8 @@ class _TopToastWidget extends StatefulWidget {
   final String message;
   final Color backgroundColor;
   final IconData icon;
+  final Color iconColor;
+  final Color? iconBackgroundColor;
   final Duration duration;
   final VoidCallback onDismiss;
 
@@ -39,6 +45,8 @@ class _TopToastWidget extends StatefulWidget {
     required this.message,
     required this.backgroundColor,
     required this.icon,
+    required this.iconColor,
+    required this.iconBackgroundColor,
     required this.duration,
     required this.onDismiss,
   });
@@ -64,7 +72,10 @@ class _TopToastWidgetState extends State<_TopToastWidget>
       begin: const Offset(0, -1.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
 
     _controller.forward();
     Future.delayed(widget.duration, _dismiss);
@@ -103,7 +114,7 @@ class _TopToastWidgetState extends State<_TopToastWidget>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.backgroundColor.withOpacity(0.35),
+                    color: widget.backgroundColor.withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -112,7 +123,15 @@ class _TopToastWidgetState extends State<_TopToastWidget>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(widget.icon, color: Colors.white, size: 20),
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: widget.iconBackgroundColor ?? Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(widget.icon, color: widget.iconColor, size: 16),
+                  ),
                   const SizedBox(width: 10),
                   Flexible(
                     child: Text(

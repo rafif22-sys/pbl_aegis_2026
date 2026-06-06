@@ -3,10 +3,19 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'sos_form_screen.dart';
 import 'riwayat_sos_screen.dart';
-
+import 'jadwal_screen.dart';
+import 'buku_tamu_screen.dart';
+import '../../sos/providers/sos_provider.dart';
+import 'pesan_screen.dart';
+import '../providers/pesan_provider.dart';
+import '../../../core/services/notification_service.dart';
+import 'dart:async';
+import 'absensi_screen.dart';
+import 'profil_petugas_screen.dart';
 
 class PetugasHomeScreen extends StatefulWidget {
-  const PetugasHomeScreen({super.key});
+  final int initialIndex;
+  const PetugasHomeScreen({super.key, this.initialIndex = 0});
 
   @override
   State<PetugasHomeScreen> createState() => _PetugasHomeScreenState();
@@ -14,57 +23,69 @@ class PetugasHomeScreen extends StatefulWidget {
 
 class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     with SingleTickerProviderStateMixin {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+  late StreamSubscription _tabSub;
 
   final List<Widget> _pages = [
-    const SizedBox(),           // Index 0: Beranda (dihandle di body)
-    const SizedBox(),           // Index 1: Jadwal
-    const RiwayatSosScreen(),     // Index 2: Riwayat ← ganti ini
-    const SizedBox(),           // Index 3: Informasi
-    const SizedBox(),           // Index 4: Profil
+    const SizedBox(), // Index 0: Beranda (dihandle di body)
+    const JadwalScreen(), // Index 1: Jadwal
+    const RiwayatSosScreen(), // Index 2: Riwayat
+    const MessageScreen(), // Index 3: Pesan
+    const ProfilPetugasScreen(), // Index 4: Profil
   ];
 
   late AnimationController _animController;
 
-  // Header: slide dari atas + fade
   late Animation<double> _headerFade;
   late Animation<Offset> _headerSlide;
 
-  // Tombol SOS: scale + fade
   late Animation<double> _sosFade;
   late Animation<double> _sosScale;
 
-  // Tombol menu: slide dari bawah + fade
   late Animation<double> _menuFade;
   late Animation<Offset> _menuSlide;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    
+    // Listen for tab change from NotificationService
+    _tabSub = NotificationService.tabStream.stream.listen((index) {
+      if (mounted) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<SosProvider>().fetchListSOS(token: token);
+        context.read<PesanProvider>().fetchUnreadCount(token: token);
+      }
+    });
 
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     );
 
-    // Header muncul pertama (0% - 45%)
     _headerFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
         curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
       ),
     );
-    _headerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
-      ),
-    );
+    _headerSlide =
+        Tween<Offset>(begin: const Offset(0, -0.08), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+          ),
+        );
 
-    // Tombol SOS muncul kedua (30% - 70%) dengan efek scale
     _sosFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
@@ -78,28 +99,26 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       ),
     );
 
-    // Tombol menu muncul terakhir (55% - 100%) dari bawah
     _menuFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _animController,
         curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
       ),
     );
-    _menuSlide = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _menuSlide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.55, 1.0, curve: Curves.easeOut),
+          ),
+        );
 
     _animController.forward();
   }
 
   @override
   void dispose() {
+    _tabSub.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -110,11 +129,10 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     final String namaPetugas = user?.nama ?? 'Petugas';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE6F2F9),
+      backgroundColor: const Color(0xFFDCEFFE), // ← sesuai
       body: _selectedIndex == 0
           ? Column(
               children: [
-                // Header: slide dari atas
                 FadeTransition(
                   opacity: _headerFade,
                   child: SlideTransition(
@@ -122,14 +140,12 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                     child: _buildHeader(namaPetugas),
                   ),
                 ),
-
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // SOS: scale muncul dari tengah
                         FadeTransition(
                           opacity: _sosFade,
                           child: ScaleTransition(
@@ -138,7 +154,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                           ),
                         ),
                         const SizedBox(height: 28),
-                        // Menu: slide dari bawah
                         FadeTransition(
                           opacity: _menuFade,
                           child: SlideTransition(
@@ -157,8 +172,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── HEADER ──────────────────────────────────────────────────────────────────
-
   Widget _buildHeader(String namaPetugas) {
     return Container(
       width: double.infinity,
@@ -173,7 +186,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
       child: Column(
         children: [
           Image.network(
-            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/aegis_full_logo.png',
+            'https://dwyfjwwgrtdspgdaifyv.supabase.co/storage/v1/object/public/logo/logo_aegis_full.png',
             height: 160,
             fit: BoxFit.contain,
             loadingBuilder: (context, child, progress) {
@@ -181,18 +194,28 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               return const SizedBox(
                 height: 160,
                 child: Center(
-                  child: CircularProgressIndicator(color: Colors.lightBlueAccent),
+                  child: CircularProgressIndicator(
+                    color: Colors.lightBlueAccent,
+                  ),
                 ),
               );
             },
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.broken_image, color: Colors.white54, size: 70);
+              return const Icon(
+                Icons.broken_image,
+                color: Colors.white54,
+                size: 70,
+              );
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
           const Text(
             'Selamat Datang,',
-            style: TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: 13,
+              letterSpacing: 0.5,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -208,14 +231,18 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.lightBlueAccent.withOpacity(0.15),
+              color: Colors.lightBlueAccent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.lightBlueAccent.withOpacity(0.4)),
+              border: Border.all(color: Colors.lightBlueAccent.withValues(alpha: 0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.shield_outlined, size: 13, color: Colors.lightBlueAccent),
+                Icon(
+                  Icons.shield_outlined,
+                  size: 13,
+                  color: Colors.lightBlueAccent,
+                ),
                 SizedBox(width: 5),
                 Text(
                   'Petugas Keamanan',
@@ -234,8 +261,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── TOMBOL SOS ──────────────────────────────────────────────────────────────
-
   Widget _buildSOSButton() {
     return GestureDetector(
       onTap: () {
@@ -248,7 +273,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         width: double.infinity,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF09FA6).withOpacity(0.5),
+          color: const Color(0xFFF09FA6).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(40),
         ),
         child: Container(
@@ -262,7 +287,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: Colors.redAccent.withOpacity(0.4),
+                color: Colors.redAccent.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
               ),
@@ -288,11 +313,15 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const Icon(Icons.shield_outlined, size: 34, color: Colors.white),
+                  const Icon(
+                    Icons.shield_outlined,
+                    size: 34,
+                    color: Colors.white,
+                  ),
                   const Text(
                     'SOS',
                     style: TextStyle(
@@ -310,32 +339,39 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── TOMBOL MENU ─────────────────────────────────────────────────────────────
-
   Widget _buildActionButtons() {
     return Row(
       children: [
         Expanded(
           child: GestureDetector(
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => BukuTamuPage()),
+              );
+
               // Navigator.push(context,
               //   MaterialPageRoute(builder: (_) => const BukuTamuPetugasPage()));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Membuka Buku Tamu...')),
-              );
             },
-            child: _buildMenuCard(icon: Icons.badge_outlined, title: 'Buku Tamu'),
+            child: _buildMenuCard(
+              icon: Icons.badge_outlined,
+              title: 'Buku Tamu',
+            ),
           ),
         ),
         const SizedBox(width: 20),
         Expanded(
           child: GestureDetector(
             onTap: () {
-              // Navigator.push(context,
-              //   MaterialPageRoute(builder: (_) => const AbsensiPage()));
-              setState(() => _selectedIndex = 1);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AbsensiScreen()),
+              );
             },
-            child: _buildMenuCard(icon: Icons.fact_check_outlined, title: 'Absen'),
+            child: _buildMenuCard(
+              icon: Icons.fact_check_outlined,
+              title: 'Absen',
+            ),
           ),
         ),
       ],
@@ -346,7 +382,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFF90C2F9).withOpacity(0.5),
+        color: const Color(0xFF90C2F9).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(35),
       ),
       child: Container(
@@ -360,7 +396,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.4),
+              color: Colors.blue.withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -391,8 +427,6 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     );
   }
 
-  // ─── BOTTOM NAV BAR ───────────────────────────────────────────────────────────
-
   Widget _buildBottomNavBar() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -404,7 +438,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 5,
             offset: const Offset(0, -5),
@@ -416,7 +450,11 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
         children: [
           _buildNavItem(icon: Icons.home_filled, label: 'Beranda', index: 0),
           _buildNavItem(icon: Icons.calendar_month, label: 'Jadwal', index: 1),
-          _buildNavItem(icon: Icons.warning_amber_rounded, label: 'Riwayat', index: 2),
+          _buildNavItem(
+            icon: Icons.warning_amber_rounded,
+            label: 'Riwayat',
+            index: 2,
+          ),
           _buildNavItem(icon: Icons.info_outline, label: 'Informasi', index: 3),
           _buildNavItem(icon: Icons.person_outline, label: 'Profil', index: 4),
         ],
@@ -430,8 +468,19 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
     required int index,
   }) {
     final bool isSelected = _selectedIndex == index;
+    final bool hasMenungguBantuan = label == 'Riwayat' && context.watch<SosProvider>().totalMenunggu > 0;
+    final bool hasUnreadPesan = label == 'Informasi' && context.watch<PesanProvider>().unreadCount > 0;
+
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () {
+        if (_selectedIndex == 3 && index != 3) {
+          final token = context.read<AuthProvider>().token;
+          if (token != null && context.read<PesanProvider>().unreadCount > 0) {
+            context.read<PesanProvider>().markAllRead(token: token);
+          }
+        }
+        setState(() => _selectedIndex = index);
+      },
       child: Container(
         color: Colors.transparent,
         child: Column(
@@ -440,13 +489,33 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE4F1FA) : Colors.transparent,
+                color: isSelected
+                    ? const Color(0xFFE4F1FA)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade400,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade400,
+                  ),
+                  if (hasMenungguBantuan || hasUnreadPesan)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 3),
@@ -455,7 +524,9 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF2280F0) : Colors.grey.shade500,
+                color: isSelected
+                    ? const Color(0xFF2280F0)
+                    : Colors.grey.shade500,
               ),
             ),
           ],

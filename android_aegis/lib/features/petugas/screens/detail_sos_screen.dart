@@ -61,7 +61,93 @@ class _DetailSosScreenState extends State<DetailSosScreen>
     super.dispose();
   }
 
+  
+  Future<String?> _showFormPenanganan() async {
+    String inputText = '';
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'Deskripsi Penanganan',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Tuliskan penanganan yang sudah dilakukan:',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  maxLines: 4,
+                  maxLength: 1000,
+                  onChanged: (val) => inputText = val.trim(),
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Sudah memanggil pemadam kebakaran...',
+                    hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFF1A3FA0)),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A3FA0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  if (inputText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Penanganan tidak boleh kosong.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx, inputText);
+                },
+                child: const Text(
+                  'Konfirmasi',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    return result;
+  }
+
+  // Ganti _handleKonfirmasi() yang lama dengan ini
   Future<void> _handleKonfirmasi() async {
+    // Tampilkan form penanganan dulu
+    final penanganan = await _showFormPenanganan();
+    if (penanganan == null || !mounted) return; // user tekan batal
+
     setState(() => _isKonfirmasi = true);
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -92,6 +178,7 @@ class _DetailSosScreenState extends State<DetailSosScreen>
         sosId:            _sos.id,
         latitudePetugas:  position.latitude,
         longitudePetugas: position.longitude,
+        penanganan:       penanganan, // ✅ kirim penanganan
       );
 
       if (!mounted) return;
@@ -140,7 +227,7 @@ class _DetailSosScreenState extends State<DetailSosScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F1FB),
+      backgroundColor: const Color(0xFFDCEFFE),  
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

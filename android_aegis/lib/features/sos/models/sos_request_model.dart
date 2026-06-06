@@ -34,11 +34,9 @@ class SosUpdateRequestModel {
   final String? status;
   final bool? bantuanWarga;
   final String? deskripsi;
-
-  /// Koordinat petugas — wajib dikirim saat status == 'selesai'
-  /// BE menggunakan ini untuk validasi jarak Haversine ≤ 50 m
   final double? latitudePetugas;
   final double? longitudePetugas;
+  final String? penanganan; // ✅ tambahkan
 
   SosUpdateRequestModel({
     this.status,
@@ -46,6 +44,7 @@ class SosUpdateRequestModel {
     this.deskripsi,
     this.latitudePetugas,
     this.longitudePetugas,
+    this.penanganan, // ✅ tambahkan
   });
 
   Map<String, dynamic> toJson() {
@@ -55,6 +54,7 @@ class SosUpdateRequestModel {
       if (deskripsi != null)         'deskripsi':          deskripsi,
       if (latitudePetugas != null)   'latitude_petugas':   latitudePetugas,
       if (longitudePetugas != null)  'longitude_petugas':  longitudePetugas,
+      if (penanganan != null)        'penanganan':         penanganan,
     };
   }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sos;
@@ -21,6 +21,7 @@ class SosController extends Controller
             'jenis_keadaan' => 'required|string|in:kebakaran,pencurian,hewan liar,bencana alam,lainnya',
             'deskripsi'     => 'required_if:jenis_keadaan,lainnya|nullable|string|max:1000',
             'bantuan_warga' => 'nullable|boolean',
+            'penanganan' => 'nullable|string|max:1000',
         ]);
 
         if ($validator->fails()) {
@@ -60,6 +61,8 @@ class SosController extends Controller
             'status'        => 'menunggu bantuan',
             'bantuan_warga' => $butuhWarga,
         ]);
+
+        app(\App\Services\FcmService::class)->sendSosNotification($sos);
 
         return response()->json([
             'success' => true,
@@ -123,7 +126,7 @@ class SosController extends Controller
             }
         }
 
-        $updateData = $request->only(['status', 'bantuan_warga', 'deskripsi']);
+        $updateData = $request->only(['status', 'bantuan_warga', 'deskripsi', 'penanganan']);
 
         // ← Catat siapa yang konfirmasi & kapan jika status selesai
         if ($request->status === 'selesai') {

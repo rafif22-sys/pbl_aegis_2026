@@ -287,6 +287,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
   }
 
   // --- WIDGET KARTU SOS DINAMIS ---
+  // --- WIDGET KARTU SOS DINAMIS ---
   Widget _buildSosCard(SosModel sos) {
     // Validasi status menggunakan enum resmi buatan Rafif
     bool isMenunggu = sos.status == StatusSOS.menungguBantuan;
@@ -295,6 +296,16 @@ class _RiwayatPageState extends State<RiwayatPage> {
     // Membaca data relasi Supabase
     String senderName = sos.user?.nama ?? 'Petugas Lapangan';
     String imgUrl = sos.user?.fotoProfil ?? 'https://randomuser.me/api/portraits/men/${sos.id % 90}.jpg';
+
+    // 1. Tentukan Ikon berdasarkan Jenis Keadaan
+    IconData jenisIcon;
+    switch (sos.jenisKeadaan) {
+      case JenisKeadaan.kebakaran:   jenisIcon = Icons.local_fire_department; break;
+      case JenisKeadaan.pencurian:   jenisIcon = Icons.person_off; break;
+      case JenisKeadaan.hewanLiar:   jenisIcon = Icons.pets; break;
+      case JenisKeadaan.bencanaAlam: jenisIcon = Icons.thunderstorm; break;
+      case JenisKeadaan.lainnya:     jenisIcon = Icons.warning_amber_rounded; break;
+    }
 
     return GestureDetector(
       onTap: () {
@@ -316,6 +327,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- BARIS 1: TANGGAL & STATUS ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -342,14 +354,70 @@ class _RiwayatPageState extends State<RiwayatPage> {
               ],
             ),
             const SizedBox(height: 4),
+            
+            // --- BARIS 2: JAM ---
             Text(
               _formatWaktu(sos.waktuKirim),
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
             ),
+            const SizedBox(height: 12),
+
+            // --- BARIS 3: BADGE JENIS KEADAAN & BANTUAN WARGA (TAMBAHAN BARU) ---
+            Row(
+              children: [
+                // Badge Jenis Keadaan
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(jenisIcon, size: 14, color: Colors.grey.shade700),
+                      const SizedBox(width: 6),
+                      Text(
+                        sos.jenisKeadaan.name.toUpperCase(), 
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Badge Bantuan Warga (Hanya muncul jika isBantuanWarga bernilai true di database)
+                if (sos.bantuanWarga) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Text(
+                      'Butuh Warga',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Divider(height: 1, color: Color(0xFFEEEEEE)),
             ),
+            
+            // --- BARIS 4: FOTO & NAMA PENGIRIM ---
             Row(
               children: [
                 CircleAvatar(

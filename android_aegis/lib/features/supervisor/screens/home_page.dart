@@ -8,9 +8,15 @@ import 'profil_page.dart';
 import 'informasi_page.dart';
 import 'buku_tamu_page.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../sos/providers/sos_provider.dart';
+import '../../../core/services/notification_service.dart';
+import '../../petugas/providers/pesan_provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:async';
 
 class SupervisorHomePage extends StatefulWidget {
-  const SupervisorHomePage({super.key});
+  final int initialIndex;
+  const SupervisorHomePage({super.key, this.initialIndex = 0});
 
   @override
   State<SupervisorHomePage> createState() => _SupervisorHomePageState();
@@ -18,7 +24,42 @@ class SupervisorHomePage extends StatefulWidget {
 
 class _SupervisorHomePageState extends State<SupervisorHomePage> {
   // Variabel untuk melacak tab yang aktif di Bottom Navigation
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+  late StreamSubscription _tabSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+    
+    _tabSub = NotificationService.tabStream.stream.listen((index) {
+      if (mounted) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = context.read<AuthProvider>().token;
+      if (token != null) {
+        context.read<SosProvider>().fetchListSOS(token: token);
+        context.read<PesanProvider>().fetchUnreadCount(token: token); 
+      }
+    });
+
+    // --- TAMBAHAN BARU: MENDENGARKAN PESAN MASUK SAAT APLIKASI DIBUKA ---
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (mounted) {
+        final token = context.read<AuthProvider>().token;
+        if (token != null) {
+          // Diam-diam update titik merah Pesan & SOS di latar belakang
+          context.read<PesanProvider>().fetchUnreadCount(token: token);
+          context.read<SosProvider>().fetchListSOS(token: token);
+        }
+      }
+    });
+  }
 
   // Daftar halaman untuk setiap tab di Bottom Navigation
   final List<Widget> _pages = [
@@ -30,6 +71,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
     const BukuTamuPage(), // Index 5: Halaman Buku Tamu
     const LaporanPage(), // Index 6: Halaman Laporan
   ];
+
+  @override
+  void dispose() {
+    _tabSub.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -414,6 +461,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
     required int index,
   }) {
     bool isSelected = _selectedIndex == index;
+    bool hasMenungguBantuan = label == 'Riwayat' && context.watch<SosProvider>().totalMenunggu > 0;
 
     return GestureDetector(
       onTap: () {
@@ -434,12 +482,30 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                icon,
-                size: 26,
-                color: isSelected
-                    ? const Color(0xFF2280F0)
-                    : Colors.grey.shade400,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    size: 26,
+                    color: isSelected
+                        ? const Color(0xFF2280F0)
+                        : Colors.grey.shade400,
+                  ),
+                  if (hasMenungguBantuan)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 4),

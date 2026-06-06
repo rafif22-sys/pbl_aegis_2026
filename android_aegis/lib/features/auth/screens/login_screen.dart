@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../../../core/routes/app_routes.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -348,7 +349,12 @@ class _LoginScreenState extends State<LoginScreen>
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
                                             TextButton(
-                                              onPressed: () {},
+                                              onPressed: () => Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => const ForgotPasswordScreen(),
+                                                ),
+                                              ),
                                               style: TextButton.styleFrom(
                                                 padding: EdgeInsets.zero,
                                                 minimumSize: Size.zero,

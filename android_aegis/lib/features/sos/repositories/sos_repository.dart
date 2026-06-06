@@ -58,15 +58,17 @@ class SosRepository {
   /// Jika > 50 m, BE return 422 dan Exception berisi pesan jarak.
   Future<SosModel> konfirmasiSOS({
     required String token,
-    required String role,             // 'petugas' atau 'supervisor'
+    required String role,
     required int    sosId,
     required double latitudePetugas,
     required double longitudePetugas,
+    required String penanganan, 
   }) async {
     final request = SosUpdateRequestModel(
       status:            'selesai',
       latitudePetugas:   latitudePetugas,
       longitudePetugas:  longitudePetugas,
+      penanganan:        penanganan, 
     );
 
     return SosService.updateSOS(

@@ -91,7 +91,7 @@ class SosPelapor {
   }
 }
 
-// ── Konfirmator SOS (petugas/supervisor yang konfirmasi) ←── BARU
+// ── Konfirmator SOS (petugas/supervisor yang konfirmasi)
 class SosKonfirmator {
   final int id;
   final String nama;
@@ -119,10 +119,11 @@ class SosModel {
   final String waktuKirim;
   final StatusSOS status;
   final bool bantuanWarga;
-  final int?            dikonfirmasiOleh; // ← BARU
-  final String?         waktuKonfirmasi;  // ← BARU
+  final int?            dikonfirmasiOleh;
+  final String?         waktuKonfirmasi;
+  final String?         penanganan;       // ✅ tambahan
   final SosPelapor?     user;
-  final SosKonfirmator? konfirmator;      // ← BARU
+  final SosKonfirmator? konfirmator;
 
   SosModel({
     required this.id,
@@ -136,6 +137,7 @@ class SosModel {
     required this.bantuanWarga,
     this.dikonfirmasiOleh,
     this.waktuKonfirmasi,
+    this.penanganan,                      // ✅ tambahan
     this.user,
     this.konfirmator,
   });
@@ -153,6 +155,7 @@ class SosModel {
       bantuanWarga:     json['bantuan_warga'] == true || json['bantuan_warga'] == 1,
       dikonfirmasiOleh: json['dikonfirmasi_oleh'],
       waktuKonfirmasi:  json['waktu_konfirmasi'],
+      penanganan:       json['penanganan'],             // ✅ tambahan
       user: json['user'] != null
           ? SosPelapor.fromJson(json['user'])
           : null,

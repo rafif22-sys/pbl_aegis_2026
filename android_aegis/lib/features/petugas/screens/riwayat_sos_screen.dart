@@ -41,7 +41,7 @@ class _RiwayatSosScreenState extends State<RiwayatSosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE4F0FB),
+      backgroundColor: const Color(0xFFDCEFFE), 
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _fetchData,
