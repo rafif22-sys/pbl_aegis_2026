@@ -524,8 +524,8 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     final aktif  = boleh && !sudah;
     final isAlpha = a.status == 'alpha'; 
 
-    
-    if (isAlpha) {
+    // Hanya tampilkan Alpha MERAH jika petugas MEMANG BELUM absen masuk
+    if (isAlpha && !sudah) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
@@ -568,6 +568,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
       );
     }
 
+    // ✅ Jika sudah absen masuk (walau status hari itu 'alpha'), tetap tampilkan CENTANG HIJAU
     return GestureDetector(
       onTap: aktif ? _onAbsenMasuk : null,
       child: AnimatedContainer(
@@ -647,7 +648,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
                   Text(
                     sudah
-                        ? a.jamMasuk!
+                        ? (a.jamMasuk ?? '-')
                         : 'Buka jam ${a.waktuBukaMasuk}',
                     style: TextStyle(
                       color: sudah
@@ -681,9 +682,9 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     final sudah  = a.sudahPulang;
     final boleh  = a.bolehAbsenPulang;
     final aktif  = boleh && !sudah && a.sudahMasuk;
-    final isAlpha = a.status == 'alpha'; // ✅
+    final isAlpha = a.status == 'alpha'; 
 
-    // ✅ Jika alpha, tampilkan card merah khusus
+    // ✅ Tampilkan Alpha MERAH jika status Alpha dari backend
     if (isAlpha) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -716,7 +717,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                       )),
                   const SizedBox(height: 4),
                   Text(
-                    // ✅ Pesan berbeda tergantung sudah masuk atau belum
+                    // ✅ Pesan dinamis sesuai instruksi Anda
                     a.sudahMasuk
                         ? 'Anda tidak melakukan absen pulang'
                         : 'Anda tidak melakukan absen masuk dan pulang',
@@ -807,7 +808,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
 
                   Text(
                     sudah
-                        ? a.jamPulang!
+                        ? (a.jamPulang ?? '-')
                         : 'Buka jam ${a.waktuBukaPulang} – ${a.batasPulang}',
                     style: TextStyle(
                       color: sudah
