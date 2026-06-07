@@ -568,7 +568,6 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
       );
     }
 
-    // ✅ Jika sudah absen masuk (walau status hari itu 'alpha'), tetap tampilkan CENTANG HIJAU
     return GestureDetector(
       onTap: aktif ? _onAbsenMasuk : null,
       child: AnimatedContainer(
@@ -684,7 +683,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     final aktif  = boleh && !sudah && a.sudahMasuk;
     final isAlpha = a.status == 'alpha'; 
 
-    // ✅ Tampilkan Alpha MERAH jika status Alpha dari backend
+  
     if (isAlpha) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),

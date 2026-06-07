@@ -54,8 +54,9 @@ class _MessageScreenState extends State<MessageScreen> {
 
     try {
       final filter = _filterValues[_selectedFilterIndex];
-      final uri = Uri.parse('${ApiClient.baseUrl}/pesan')
-          .replace(queryParameters: {'filter': filter});
+      final uri = Uri.parse(
+        '${ApiClient.baseUrl}/pesan',
+      ).replace(queryParameters: {'filter': filter});
 
       final response = await http.get(
         uri,
@@ -125,21 +126,39 @@ class _MessageScreenState extends State<MessageScreen> {
               child: Row(
                 children: [
                   MessageFilterTab(
-                    index: 0, label: 'Semua',
+                    index: 0,
+                    label: 'Semua',
                     selectedIndex: _selectedFilterIndex,
-                    onTap: () { if (_selectedFilterIndex != 0) { setState(() => _selectedFilterIndex = 0); _fetchMessages(); } },
+                    onTap: () {
+                      if (_selectedFilterIndex != 0) {
+                        setState(() => _selectedFilterIndex = 0);
+                        _fetchMessages();
+                      }
+                    },
                   ),
                   const SizedBox(width: 10),
                   MessageFilterTab(
-                    index: 1, label: 'Belum Dibaca',
+                    index: 1,
+                    label: 'Belum Dibaca',
                     selectedIndex: _selectedFilterIndex,
-                    onTap: () { if (_selectedFilterIndex != 1) { setState(() => _selectedFilterIndex = 1); _fetchMessages(); } },
+                    onTap: () {
+                      if (_selectedFilterIndex != 1) {
+                        setState(() => _selectedFilterIndex = 1);
+                        _fetchMessages();
+                      }
+                    },
                   ),
                   const SizedBox(width: 10),
                   MessageFilterTab(
-                    index: 2, label: 'Favorit',
+                    index: 2,
+                    label: 'Favorit',
                     selectedIndex: _selectedFilterIndex,
-                    onTap: () { if (_selectedFilterIndex != 2) { setState(() => _selectedFilterIndex = 2); _fetchMessages(); } },
+                    onTap: () {
+                      if (_selectedFilterIndex != 2) {
+                        setState(() => _selectedFilterIndex = 2);
+                        _fetchMessages();
+                      }
+                    },
                   ),
                 ],
               ),
@@ -169,7 +188,9 @@ class _MessageScreenState extends State<MessageScreen> {
                 _errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Colors.black87, fontWeight: FontWeight.w600),
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 12),
               ElevatedButton(

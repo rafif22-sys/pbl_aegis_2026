@@ -18,6 +18,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/aegis-7b556-firebase-adminsdk-fbsvc-cda5d9b622
 /vendor
 Homestead.json
 Homestead.yaml

@@ -35,7 +35,7 @@ class TopBarScreen extends StatelessWidget {
             height: 30,
             width: 30,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) {
+            errorBuilder: (_, _, _) {
               return const Icon(
                 Icons.security,
                 color: Colors.lightBlueAccent,

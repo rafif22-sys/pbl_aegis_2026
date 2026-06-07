@@ -3,12 +3,16 @@ import 'package:provider/provider.dart';
 import 'daftar_petugas_page.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'widgets/aegis_top_header.dart';
+import 'data_diri_screen.dart';
 
 class ProfilPage extends StatelessWidget {
   const ProfilPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 1. Tarik data user yang sedang login dari Provider
+    final user = context.watch<AuthProvider>().user;
+
     return Scaffold(
       backgroundColor: const Color(0xFFE4F0FB), // Background biru muda Aegis
       body: SafeArea(
@@ -21,14 +25,14 @@ class ProfilPage extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 30),
-                    _buildProfileHeader(),
+                    // 2. Lempar data user ke header
+                    _buildProfileHeader(user), 
                     const SizedBox(height: 24),
                     _buildStatsRow(),
                     const SizedBox(height: 30),
                     _buildMenuContainer(context),
                     
-                    const SizedBox(height: 30), // Jarak sebelum tombol logout
-                    // --- PEMANGGILAN TOMBOL LOGOUT ---
+                    const SizedBox(height: 30),
                     const TombolLogoutSupervisor(), 
                   ],
                 ),
@@ -40,7 +44,8 @@ class ProfilPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
+  // 3. Ubah fungsi header agar menerima parameter user dinamis
+  Widget _buildProfileHeader(dynamic user) {
     return Column(
       children: [
         Container(
@@ -49,15 +54,20 @@ class ProfilPage extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 4),
-            image: const DecorationImage(
-              image: NetworkImage('https://randomuser.me/api/portraits/men/46.jpg'), // Placeholder Ganjar Subianto
-              fit: BoxFit.cover,
-            ),
+            image: user?.fotoProfil != null
+                ? DecorationImage(
+                    image: NetworkImage(user!.fotoProfil!),
+                    fit: BoxFit.cover,
+                  )
+                : null,
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
           ),
+          child: user?.fotoProfil == null
+              ? const Icon(Icons.person, size: 55, color: Color(0xFF1976D2))
+              : null,
         ),
         const SizedBox(height: 16),
-        const Text('Ganjar Subianto', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
+        Text(user?.nama ?? '-', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
         const Text('Supervisor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1))),
       ],
     );
@@ -130,7 +140,14 @@ class ProfilPage extends StatelessWidget {
             },
           ),
           _buildDivider(),
-          _buildMenuItem(icon: Icons.person, title: 'Data Diri', onTap: () {}),
+          // 4. Hubungkan tombol ini ke halaman Data Diri yang baru dibuat
+          _buildMenuItem(
+            icon: Icons.person, 
+            title: 'Data Diri', 
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const SupervisorDataDiriScreen()));
+            }
+          ),
           _buildDivider(),
           _buildMenuItem(icon: Icons.lock, title: 'Keamanan', onTap: () {}),
           _buildDivider(),
@@ -182,7 +199,6 @@ class TombolLogoutSupervisor extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       onPressed: () async {
-        // 1. Munculkan pop-up konfirmasi
         final bool? konfirmasi = await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
@@ -203,14 +219,11 @@ class TombolLogoutSupervisor extends StatelessWidget {
           },
         );
 
-        // 2. Jika klik "Keluar", jalankan fungsi dari AuthProvider
         if (konfirmasi == true && context.mounted) {
           final authProvider = context.read<AuthProvider>();
           
-          // Proses menghapus token di Supabase & memori HP
           await authProvider.logout();
 
-          // 3. Lempar paksa kembali ke halaman Login dan hapus tumpukan histori halaman
           if (context.mounted) {
             Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
           }

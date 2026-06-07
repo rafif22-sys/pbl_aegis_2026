@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../models/tamu_model.dart';
 import 'helpers.dart';
@@ -21,6 +20,12 @@ class GuestCard extends StatelessWidget {
     final isKeluar = tamu.status == 'keluar';
     final today = DateTime.now();
 
+    // --- TAMBAHAN LOGIKA OVERTIME ---
+    final bool isBelumKeluar = !isKeluar;
+    final bool hasWaktuKeluar = tamu.waktuKeluar != null;
+    final bool isOvertime = isBelumKeluar && hasWaktuKeluar && today.isAfter(tamu.waktuKeluar!.toLocal());
+    // ---------------------------------
+
     final masukBedaHari = masuk.year != today.year ||
         masuk.month != today.month ||
         masuk.day != today.day;
@@ -31,7 +36,7 @@ class GuestCard extends StatelessWidget {
 
     // Waktu keluar
     String waktuKeluarStr = '--:--';
-    if (tamu.waktuKeluar != null) {
+    if (hasWaktuKeluar) {
       final keluar = tamu.waktuKeluar!.toLocal();
       final bedaHari = keluar.year != masuk.year ||
           keluar.month != masuk.month ||
@@ -55,7 +60,11 @@ class GuestCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.shade200),
+              // --- TAMBAHAN BORDER MERAH JIKA OVERTIME ---
+              border: Border.all(
+                color: isOvertime ? Colors.red.shade300 : Colors.grey.shade200,
+                width: isOvertime ? 1.5 : 1.0,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,16 +73,43 @@ class GuestCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // --- TAMBAHAN BADGE OVERTIME DI SEBELAH NAMA ---
                     Expanded(
-                      child: Text(
-                        tamu.nama,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              tamu.nama,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isOvertime) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF0F0),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.red.shade300),
+                              ),
+                              child: const Text(
+                                'OVERTIME!',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                    // ------------------------------------------------
                     const SizedBox(width: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -97,14 +133,26 @@ class GuestCard extends StatelessWidget {
                 const SizedBox(height: 5),
 
                 // ── Waktu Masuk & Keluar + ID ──
-                Text(
-                  'Masuk $waktuMasukStr  |  Keluar $waktuKeluarStr',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 13,
+                // --- UBAH JADI RICHTEXT AGAR BISA MERAH ---
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
+                    ),
+                    children: [
+                      TextSpan(text: 'Masuk $waktuMasukStr  |  '),
+                      TextSpan(
+                        text: 'Keluar $waktuKeluarStr',
+                        style: TextStyle(
+                          color: (!hasWaktuKeluar || isOvertime) ? Colors.red : Colors.grey,
+                          fontWeight: (!hasWaktuKeluar || isOvertime) ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
+                // ------------------------------------------
               ],
             ),
           ),

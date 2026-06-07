@@ -55,7 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:petugas,supervisor,warga')->group(function () {
         Route::get('/tamu', [TamuController::class, 'index'])->name('tamu.index');
     });
-    // POST/PATCH/PUT — hanya petugas yang bisa tambah/edit
+
+    // 2. Hak Akses TULIS (Hanya boleh dilakukan Petugas lapangan)
     Route::middleware('role:petugas')->group(function () {
         Route::post('/tamu', [TamuController::class, 'store'])->name('tamu.store');
         Route::patch('/tamu/{id}', [TamuController::class, 'update'])->name('tamu.update');
@@ -65,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Supervisor Routes ───────────────────────────────
     Route::middleware('role:supervisor')->prefix('supervisor')->name('supervisor.')->group(function () {
         Route::patch('/sos/{id}', [SosController::class, 'update'])->name('sos.update');
+        Route::post('/pesan', [PesanController::class, 'store']);
     });
 
     // ── Warga Routes ────────────────────────────────────

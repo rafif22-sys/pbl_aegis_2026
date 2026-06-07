@@ -10,6 +10,8 @@ import 'buku_tamu_page.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../sos/providers/sos_provider.dart';
 import '../../../core/services/notification_service.dart';
+import '../../petugas/providers/pesan_provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
 
 class SupervisorHomePage extends StatefulWidget {
@@ -42,6 +44,19 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       final token = context.read<AuthProvider>().token;
       if (token != null) {
         context.read<SosProvider>().fetchListSOS(token: token);
+        context.read<PesanProvider>().fetchUnreadCount(token: token); 
+      }
+    });
+
+    // --- TAMBAHAN BARU: MENDENGARKAN PESAN MASUK SAAT APLIKASI DIBUKA ---
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (mounted) {
+        final token = context.read<AuthProvider>().token;
+        if (token != null) {
+          // Diam-diam update titik merah Pesan & SOS di latar belakang
+          context.read<PesanProvider>().fetchUnreadCount(token: token);
+          context.read<SosProvider>().fetchListSOS(token: token);
+        }
       }
     });
   }

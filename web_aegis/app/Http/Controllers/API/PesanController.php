@@ -28,14 +28,34 @@ class PesanController extends Controller
             ], 422);
         }
 
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
+        $userRole = strtolower($user->role ?? '');
         $filter = $request->query('filter', 'semua');
         $lastRead = Cache::get($this->lastReadKey($userId));
         $favoriteIds = $this->favoriteIds($userId);
 
-        $pesan = Informasi::with('user:id,nama,role')
-            ->latest('waktu_kirim')
-            ->get()
+        // 1. Buat Query Dasar
+        $query = Informasi::with('user:id,nama,role')->latest('waktu_kirim');
+
+        // 2. Filter Berdasarkan Role
+        if ($userRole === 'petugas') {
+            // Petugas HANYA melihat pesan dari Admin ATAU Supervisornya sendiri
+            $idSupervisor = $user->id_supervisor;
+            $query->whereHas('user', function ($q) use ($idSupervisor) {
+                $q->where('role', 'admin')
+                  ->orWhere('id', $idSupervisor);
+            });
+        } elseif ($userRole === 'supervisor') {
+            // Supervisor melihat pesan dari Admin ATAU pesan yang dia kirim sendiri
+            $query->whereHas('user', function ($q) use ($userId) {
+                $q->where('role', 'admin')
+                  ->orWhere('id', $userId);
+            });
+        }
+
+        // 3. Eksekusi Query dan Format
+        $pesan = $query->get()
             ->map(fn (Informasi $item) => $this->formatPesan($item, $userId, $lastRead, $favoriteIds));
 
         if ($filter === 'belum_dibaca') {
@@ -51,6 +71,48 @@ class PesanController extends Controller
             'data' => $pesan->values(),
         ]);
     }
+
+    /**
+     * Menyimpan pesan baru dari Supervisor.
+     * POST /api/supervisor/pesan
+     */
+    public function store(Request $request)
+    {
+        // 1. Validasi input dari Flutter
+        $validator = Validator::make($request->all(), [
+            'pesan' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesan tidak boleh kosong.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            // 2. Simpan ke database tabel informasi
+            $informasi = new Informasi();
+            $informasi->id_user = $request->user()->id; // Mengambil ID supervisor yang sedang login
+            $informasi->pesan = $request->pesan;
+            $informasi->waktu_kirim = now();
+            $informasi->save();
+
+            // 3. Beri jawaban sukses ke Flutter
+            return response()->json([
+                'success' => true,
+                'message' => 'Pesan berhasil dikirim.',
+                'data' => $informasi
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan pesan: ' . $e->getMessage()
+            ], 500);
+        }
+    }   
 
     private function formatPesan(Informasi $informasi, int $userId, $lastRead, array $favoriteIds): array
     {
@@ -102,12 +164,30 @@ class PesanController extends Controller
 
     public function unreadCount(Request $request)
     {
-        $userId      = $request->user()->id;
-        $lastRead    = Cache::get($this->lastReadKey($userId));
-        $favoriteIds = $this->favoriteIds($userId);
+        $user = $request->user();
+        $userId = $user->id;
+        $userRole = strtolower($user->role ?? '');
+        $lastRead = Cache::get($this->lastReadKey($userId));
 
-        $count = Informasi::latest('waktu_kirim')
-            ->get()
+        // 1. Buat Query Dasar
+        $query = Informasi::latest('waktu_kirim');
+
+        // 2. Filter Berdasarkan Role (Sama persis seperti di index)
+        if ($userRole === 'petugas') {
+            $idSupervisor = $user->id_supervisor;
+            $query->whereHas('user', function ($q) use ($idSupervisor) {
+                $q->where('role', 'admin')
+                  ->orWhere('id', $idSupervisor);
+            });
+        } elseif ($userRole === 'supervisor') {
+            $query->whereHas('user', function ($q) use ($userId) {
+                $q->where('role', 'admin')
+                  ->orWhere('id', $userId);
+            });
+        }
+
+        // 3. Hitung jumlah yang belum dibaca
+        $count = $query->get()
             ->filter(fn($item) => $this->isUnread($item, $userId, $lastRead))
             ->count();
 
@@ -120,8 +200,10 @@ class PesanController extends Controller
         $nama = $informasi->user->nama ?? 'Unknown';
 
         return match ($role) {
+            'admin' => 'Admin', // Admin biasanya dibiarkan bernama 'Admin'
             'aegis', 'system' => 'AEGIS',
-            default            => $nama, // ← cukup nama saja tanpa role
+            'supervisor' => $informasi->user->nama ?? 'Supervisor',
+            default => $informasi->user->nama ?? 'Unknown',
         };
     }
 

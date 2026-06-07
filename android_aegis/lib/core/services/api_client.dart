@@ -7,7 +7,7 @@ class ApiClient {
   static Map<String, String> headers({String? token}) {
     return {
       'Content-Type': 'application/json',
-      'Accept':       'application/json',
+      'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
