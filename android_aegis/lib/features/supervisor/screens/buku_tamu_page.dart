@@ -75,7 +75,9 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
 
   List<TamuModel> get _filteredTamus {
     return _tamus.where((tamu) {
-      if (!_showAllDates) {
+      final bool isMasuk = (tamu.status ?? '').toLowerCase() == 'masuk';
+
+      if (!_showAllDates && !isMasuk) {
         final target = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
         final masuk = tamu.waktuMasuk.toLocal();
         final startDate = DateTime(masuk.year, masuk.month, masuk.day);
@@ -164,7 +166,7 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE4F0FB),
+      backgroundColor: const Color(0xFFDCEFFE),
       body: SafeArea(
         child: Column(
           children: [
@@ -240,23 +242,50 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
             ),
           ),
           GestureDetector(
-            onTap: () => setState(() => _showAllDates = !_showAllDates),
+            onTap: _showAllDates
+                ? null
+                : () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      locale: const Locale('id', 'ID'),
+                    );
+                    if (picked != null) {
+                      setState(() => _selectedDate = picked);
+                    }
+                  },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(color: _showAllDates ? const Color(0xFF0D47A1) : Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: _showAllDates ? const Color(0xFF0D47A1) : Colors.grey.shade300)),
-              child: Text(_showAllDates ? 'Semua Hari' : 'Pilih Tanggal', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _showAllDates ? Colors.white : Colors.black87)),
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _showAllDates ? Colors.grey.shade100 : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_month,
+                    size: 16,
+                    color: _showAllDates ? Colors.grey : Colors.black87,
+                  ),
+                  Text(
+                    ' Pilih Tanggal',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _showAllDates ? Colors.grey : Colors.black87,
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 16,
+                    color: _showAllDates ? Colors.grey : Colors.black87,
+                  ),
+                ],
+              ),
             ),
           ),
-          if (!_showAllDates) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2020), lastDate: DateTime.now());
-                if (picked != null) setState(() => _selectedDate = picked);
-              },
-              child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)), child: const Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.black54)),
-            ),
-          ]
         ],
       ),
     );

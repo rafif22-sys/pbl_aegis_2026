@@ -88,8 +88,10 @@ class _BukuTamuPageState extends State<BukuTamuPage> {
 
   List<TamuModel> get _filteredTamus {
     return _tamus.where((tamu) {
-      // Filter tanggal
-      if (!_showAllDates) {
+      final bool isMasuk = tamu.status == 'masuk';
+
+      // Filter tanggal (Tamu yang masih masuk selalu ditampilkan)
+      if (!_showAllDates && !isMasuk) {
         final masuk = tamu.waktuMasuk.toLocal();
         
         // Tentukan tanggal akhir: waktuKeluar jika ada, jika tidak gunakan masuk

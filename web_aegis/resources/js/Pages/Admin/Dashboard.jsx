@@ -1,6 +1,6 @@
 // resources/js/Pages/Admin/Dashboard.jsx
 import { Head, useForm } from "@inertiajs/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPersonMilitaryPointing, faPeopleRoof, faUserTie } from "@fortawesome/free-solid-svg-icons";
 
@@ -14,6 +14,18 @@ export default function Dashboard({ stats, buku_tamu, rute_patroli, informasi, a
     const logEndRef    = useRef(null);
     const currentUserId = auth?.user?.id;
     const { data, setData, post, processing, reset, errors } = useForm({ pesan: "" });
+
+    const unreadIds = useMemo(() => {
+        const ids = new Set();
+        let count = unread_count;
+        for (let i = informasi.length - 1; i >= 0 && count > 0; i--) {
+            if (informasi[i].id_pengirim !== currentUserId) {
+                ids.add(informasi[i].id);
+                count--;
+            }
+        }
+        return ids;
+    }, [informasi, unread_count, currentUserId]);
 
     useEffect(() => {
         logEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,6 +61,17 @@ export default function Dashboard({ stats, buku_tamu, rute_patroli, informasi, a
             accent: "#34d399",
         },
     ];
+
+    // Role badge color
+    const roleBadge = (role) => {
+        const map = {
+            admin:      { bg: "#dbeafe", color: "#1d4ed8", label: "Admin" },
+            petugas:    { bg: "#dcfce7", color: "#15803d", label: "Petugas" },
+            supervisor: { bg: "#fef9c3", color: "#a16207", label: "Supervisor" },
+            warga:      { bg: "#f3e8ff", color: "#7e22ce", label: "Warga" },
+        };
+        return map[role?.toLowerCase()] ?? { bg: "#f1f5f9", color: "#64748b", label: role ?? "—" };
+    };
 
     return (
         <>
@@ -187,62 +210,125 @@ export default function Dashboard({ stats, buku_tamu, rute_patroli, informasi, a
                             ))}
                         </div>
 
-                        {/* Log Informasi */}
+                        {/* ── LOG INFORMASI (redesigned as noticeboard) ── */}
                         <div
                             className="rounded-2xl overflow-hidden shadow-sm flex flex-col flex-1 min-h-0"
                             style={{ background: "white", border: "1.5px solid #c7e8f8" }}
                         >
-                            {/* Log header */}
+                            {/* Header */}
                             <div
                                 className="px-3 py-2.5 shrink-0 flex items-center gap-2"
                                 style={{ background: "#0F2A44" }}
                             >
+                                {/* Megaphone icon — lebih cocok untuk "informasi/pengumuman" */}
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#90c4e8" strokeWidth="2">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    <path d="M3 11l17-9-9 17-2-8-6-0z" />
                                 </svg>
-                                <h2 className="font-semibold text-xs text-white tracking-wide">LOG INFORMASI</h2>
+                                <h2 className="font-semibold text-xs text-white tracking-wide">PAPAN INFORMASI</h2>
                                 {unread_count > 0 && (
                                     <span
                                         className="ml-auto text-xs px-2 py-0.5 rounded-full font-semibold animate-pulse"
                                         style={{ background: "#ef4444", color: "white" }}
                                     >
-                                        {unread_count} belum terbaca
+                                        {unread_count} baru
                                     </span>
                                 )}
                             </div>
 
-                            {/* Messages */}
+                            {/* Daftar informasi — feed vertikal, bukan bubble kiri/kanan */}
                             <div
-                                className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 min-h-0"
+                                className="flex-1 overflow-y-auto flex flex-col gap-0 min-h-0"
                                 style={{ scrollbarWidth: "thin", scrollbarColor: "#b8dff0 transparent" }}
                             >
                                 {informasi.length === 0 ? (
-                                    <p className="text-xs text-center text-gray-400 mt-4">Belum ada informasi.</p>
+                                    <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5">
+                                            <path d="M3 11l17-9-9 17-2-8-6-0z" />
+                                        </svg>
+                                        <p className="text-xs text-center text-gray-400">Belum ada informasi.</p>
+                                    </div>
                                 ) : (
-                                    informasi.map((log) => (
-                                        <LogBubble
-                                            key={log.id}
-                                            log={log}
-                                            isMe={log.id_pengirim === currentUserId}
-                                        />
-                                    ))
+                                    informasi.map((log, idx) => {
+                                        const badge = roleBadge(log.role);
+                                        const isMe  = log.id_pengirim === currentUserId;
+                                        const isNew = unreadIds.has(log.id);
+                                        return (
+                                            <div
+                                                key={log.id}
+                                                style={{
+                                                    borderBottom: idx < informasi.length - 1 ? "2px solid #c7e8f8" : "none",
+                                                    background: isMe ? "#f0f7ff" : "white",
+                                                    padding: "10px 12px",
+                                                }}
+                                            >
+                                                {/* Titik merah untuk informasi baru */}
+                                                {isNew && (
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px" }}>
+                                                        <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ef4444", display: "inline-block", flexShrink: 0 }} />
+                                                        <span style={{ fontSize: "9px", color: "#ef4444", fontWeight: 700, letterSpacing: "0.05em" }}>BARU</span>
+                                                    </div>
+                                                )}
+                                                {/* Baris atas: nama + badge role + waktu */}
+                                                <div className="flex items-center gap-1.5 mb-1">
+                                                    {/* Indikator "saya" */}
+                                                    {isMe && (
+                                                        <span
+                                                            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                                            style={{ background: "#005EA4", color: "white", letterSpacing: "0.05em" }}
+                                                        >
+                                                            SAYA
+                                                        </span>
+                                                    )}
+                                                    <span
+                                                        className="text-xs font-semibold truncate"
+                                                        style={{ color: "#0F2A44", maxWidth: "90px" }}
+                                                    >
+                                                        {log.pengirim}
+                                                    </span>
+                                                    <span
+                                                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                                                        style={{ background: badge.bg, color: badge.color }}
+                                                    >
+                                                        {badge.label}
+                                                    </span>
+                                                    <span
+                                                        className="ml-auto text-[10px] shrink-0"
+                                                        style={{ color: "#94a3b8" }}
+                                                    >
+                                                        {formatWaktu(log.waktu_iso)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Isi pesan */}
+                                                <p
+                                                    className="text-xs leading-relaxed"
+                                                    style={{ color: "#334155" }}
+                                                >
+                                                    {log.pesan}
+                                                </p>
+                                            </div>
+                                        );
+                                    })
                                 )}
                                 <div ref={logEndRef} />
                             </div>
 
-                            {/* Input */}
+                            {/* Input kirim informasi */}
                             <form
                                 onSubmit={handleKirim}
                                 className="flex flex-col gap-1 px-3 py-2 shrink-0"
                                 style={{ borderTop: "1px solid #e0f2fe" }}
                             >
+                                <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#94a3b8", letterSpacing: "0.04em" }}>
+                                    KIRIM INFORMASI
+                                </p>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="text"
                                         value={data.pesan}
                                         onChange={(e) => setData("pesan", e.target.value)}
                                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleKirim(e); } }}
-                                        placeholder="Ketik pesan..."
+                                        placeholder="Tulis informasi singkat..."
                                         disabled={processing}
                                         className="flex-1 text-xs rounded-lg px-3 py-2 outline-none disabled:opacity-60"
                                         style={{

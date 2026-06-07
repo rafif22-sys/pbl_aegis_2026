@@ -82,8 +82,10 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
 
   List<TamuModel> get _filteredTamus {
     return _tamus.where((tamu) {
-      // Filter tanggal
-      if (!_showAllDates) {
+      final bool isMasuk = tamu.status == 'masuk';
+
+      // Filter tanggal (Tamu yang masih masuk selalu ditampilkan)
+      if (!_showAllDates && !isMasuk) {
         final masuk  = tamu.waktuMasuk.toLocal();
         final keluar = tamu.waktuKeluar?.toLocal() ?? masuk;
 
@@ -492,11 +494,14 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
   }
 
   Widget _guestCard(TamuModel tamu) {
-    final waktuMasuk = _formatTimeWithDate(tamu.waktuMasuk);
+    final waktuMasuk = _formatTimeWithDate(tamu.waktuMasuk.toLocal());
     final waktuKeluar = tamu.waktuKeluar != null
-        ? _formatTimeWithDate(tamu.waktuKeluar!)
-        : '-';
+        ? _formatTimeWithDate(tamu.waktuKeluar!.toLocal())
+        : '--:--';
     final isKeluar = tamu.status == 'keluar';
+    final isBelumKeluar = !isKeluar;
+    final hasWaktuKeluar = tamu.waktuKeluar != null;
+    final isOvertime = isBelumKeluar && hasWaktuKeluar && DateTime.now().isAfter(tamu.waktuKeluar!.toLocal());
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -511,7 +516,10 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(
+                color: isOvertime ? Colors.red.shade300 : Colors.grey.shade200,
+                width: isOvertime ? 1.5 : 1.0,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,13 +528,38 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        tamu.nama,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              tamu.nama,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isOvertime) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF0F0),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.red.shade300),
+                              ),
+                              child: const Text(
+                                'OVERTIME!',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -549,19 +582,23 @@ class _BukuTamuScreenState extends State<BukuTamuScreen> {
                   ],
                 ),
                 const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Masuk $waktuMasuk | Keluar $waktuKeluar',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 13,
                     ),
-                  ],
+                    children: [
+                      TextSpan(text: 'Masuk $waktuMasuk | '),
+                      TextSpan(
+                        text: 'Keluar $waktuKeluar',
+                        style: TextStyle(
+                          color: (!hasWaktuKeluar || isOvertime) ? Colors.red : Colors.grey,
+                          fontWeight: (!hasWaktuKeluar || isOvertime) ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

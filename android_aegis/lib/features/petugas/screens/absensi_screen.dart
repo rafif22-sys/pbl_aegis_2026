@@ -117,10 +117,10 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
       }
     }
 
-    final foto = await _bukaKamera('Absen Masuk');
+    final foto = await _bukaKamera('Presensi Masuk');
     if (foto == null) return;
 
-    _showLoading('Menyimpan absen masuk...');
+    _showLoading('Menyimpan presensi masuk...');
     try {
       
       final result = await _repo.absenMasuk(
@@ -130,7 +130,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
       if (mounted) {
         Navigator.pop(context);
         setState(() => _absensi = result);
-        _showSuccess('Absen masuk berhasil!\nJam: ${result.jamMasuk}');
+        _showSuccess('Presensi masuk berhasil!\nJam: ${result.jamMasuk}');
       }
     } catch (e) {
       if (mounted) {
@@ -297,7 +297,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  'ABSENSI',
+                  'PRESENSI',
                   style: TextStyle(
                     color: _textDark,
                     fontSize: 20,
@@ -517,14 +517,14 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     return content;
   }
 
-  // ── TOMBOL ABSEN MASUK ─────────────────────────────────────────────────────
+  // ── TOMBOL Presensi MASUK ─────────────────────────────────────────────────────
   Widget _buildTombolMasuk(AbsensiModel a) {
     final sudah  = a.sudahMasuk;
     final boleh  = a.bolehAbsenMasuk;
     final aktif  = boleh && !sudah;
     final isAlpha = a.status == 'alpha'; 
 
-    // Hanya tampilkan Alpha MERAH jika petugas MEMANG BELUM absen masuk
+    
     if (isAlpha && !sudah) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -556,7 +556,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                         fontWeight: FontWeight.bold,
                       )),
                   SizedBox(height: 4),
-                  Text('Anda tidak melakukan absen masuk dan pulang',
+                  Text('Anda tidak melakukan presensi masuk dan pulang',
                       style: TextStyle(
                         color: Color(0xFFDC2626), fontSize: 13,
                       )),
@@ -631,7 +631,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Absen Masuk',
+                    'Presensi Masuk',
                     style: TextStyle(
                       color: sudah
                           ? const Color(0xFF166534)
@@ -676,7 +676,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
     );
   }
 
-  // ── TOMBOL ABSEN PULANG ────────────────────────────────────────────────────
+  // ── TOMBOL Presensi PULANG ────────────────────────────────────────────────────
   Widget _buildTombolPulang(AbsensiModel a) {
     final sudah  = a.sudahPulang;
     final boleh  = a.bolehAbsenPulang;
@@ -718,8 +718,8 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                   Text(
                     // ✅ Pesan dinamis sesuai instruksi Anda
                     a.sudahMasuk
-                        ? 'Anda tidak melakukan absen pulang'
-                        : 'Anda tidak melakukan absen masuk dan pulang',
+                        ? 'Anda tidak melakukan presensi pulang'
+                        : 'Anda tidak melakukan presensi masuk dan pulang',
                     style: const TextStyle(
                       color: Color(0xFFDC2626), fontSize: 13,
                     ),
@@ -791,7 +791,7 @@ class _AbsensiScreenState extends State<AbsensiScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Absen Keluar',
+                    'Presensi Keluar',
                     style: TextStyle(
                       color: sudah
                           ? const Color(0xFF166534)

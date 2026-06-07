@@ -213,38 +213,40 @@ class _DetailTamuDialogState extends State<DetailTamuDialog> {
                   ),
                 ),
 
-                const SizedBox(width: 10),
+                if (widget.onKeluar != null) ...[
+                  const SizedBox(width: 10),
 
-                // Tombol Tamu Keluar
-                SizedBox(
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed:
-                        (sudahKeluar || _isProcessing) ? null : _handleKeluar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2EB24F),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFBFE8C8),
-                      disabledForegroundColor: Colors.white70,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
+                  // Tombol Tamu Keluar
+                  SizedBox(
+                    height: 46,
+                    child: ElevatedButton(
+                      onPressed:
+                          (sudahKeluar || _isProcessing) ? null : _handleKeluar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2EB24F),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFFBFE8C8),
+                        disabledForegroundColor: Colors.white70,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(26),
+                        ),
                       ),
+                      child: _isProcessing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'Tamu Keluar',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
                     ),
-                    child: _isProcessing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text(
-                            'Tamu Keluar',
-                            style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
                   ),
-                ),
+                ],
               ],
             ),
           ],

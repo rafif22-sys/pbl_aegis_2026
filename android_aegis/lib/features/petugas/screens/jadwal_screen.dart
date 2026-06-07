@@ -522,7 +522,7 @@ class _JadwalScreenState extends State<JadwalScreen> {
             ),
             const SizedBox(width: 10),
             const Text(
-              'RIWAYAT ABSENSI',
+              'RIWAYAT PRESENSI',
               style: TextStyle(
                 color: _textDark, fontSize: 18,
                 fontWeight: FontWeight.bold, letterSpacing: 0.3,

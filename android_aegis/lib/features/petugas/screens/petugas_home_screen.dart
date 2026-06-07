@@ -370,7 +370,7 @@ class _PetugasHomeScreenState extends State<PetugasHomeScreen>
             },
             child: _buildMenuCard(
               icon: Icons.fact_check_outlined,
-              title: 'Absen',
+              title: 'Presensi',
             ),
           ),
         ),

@@ -4,6 +4,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../petugas/providers/pesan_provider.dart';
 import 'widgets/aegis_top_header.dart';
 import '../../petugas/models/pesan_model.dart';
+import '../../petugas/screens/widgets/sos/sos_top_toast.dart';
 
 class InformasiPage extends StatefulWidget {
   const InformasiPage({super.key});
@@ -99,7 +100,7 @@ class _InformasiPageState extends State<InformasiPage> {
           backgroundColor: const Color(0xFF0D47A1),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           icon: const Icon(Icons.send_outlined, color: Colors.white, size: 20),
-          label: const Text('Kirim Pesan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          label: const Text('Kirim Informasi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
       ),
     );
@@ -271,7 +272,7 @@ class _InformasiPageState extends State<InformasiPage> {
                   children: [
                     const Center(
                       child: Text(
-                        'Kirim Pesan ke Petugas',
+                        'Kirim Informasi ke Petugas',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                       ),
                     ),
@@ -279,7 +280,7 @@ class _InformasiPageState extends State<InformasiPage> {
                     TextField(
                       controller: _pesanCtrl,
                       decoration: const InputDecoration(
-                        hintText: 'Masukan pesan untuk semua petugas',
+                        hintText: 'Masukan Informasi untuk semua petugas',
                         hintStyle: TextStyle(color: Colors.black38, fontSize: 13),
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.black26)),
                         focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0D47A1))),
@@ -327,8 +328,13 @@ class _InformasiPageState extends State<InformasiPage> {
                                     if (success) {
                                       Navigator.pop(dialogContext); // Tutup pop-up
                                       _loadData(); // Refresh daftar pesan
-                                      ScaffoldMessenger.of(parentContext).showSnackBar(
-                                        const SnackBar(content: Text('Pesan berhasil dikirim!'), backgroundColor: Colors.green),
+                                      SosTopToast.show(
+                                        parentContext,
+                                        message: 'Informasi berhasil dikirim!',
+                                        backgroundColor: const Color(0xFF1CAF5E),
+                                        icon: Icons.check,
+                                        iconColor: const Color(0xFF1CAF5E),
+                                        iconBackgroundColor: Colors.white,
                                       );
                                     } else {
                                       // Jika gagal, matikan efek loading dan beri tahu pengguna
